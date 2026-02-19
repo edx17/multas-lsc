@@ -72,37 +72,18 @@
         
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* Loading Overlay */
-        #loading-screen {
-            position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 20px;
-        }
-        #debug-log {
-            font-family: monospace; font-size: 10px; color: #999; 
-            margin-top: 20px; max-width: 300px; word-wrap: break-word;
+        /* Status Toast */
+        #status-toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 8px 16px;
+            border-radius: 20px; font-size: 12px; z-index: 100;
+            display: none; transition: opacity 0.3s;
         }
     </style>
 </head>
 <body class="min-h-screen pb-24 relative select-none">
 
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <div id="loading-content">
-            <i class="fas fa-circle-notch fa-spin text-4xl text-club-green mb-4"></i>
-            <p class="text-gray-800 font-bold text-lg mb-2">Cargando Club...</p>
-            <p class="text-sm text-gray-500" id="loading-status">Iniciando...</p>
-        </div>
-        
-        <div id="loading-actions" class="hidden mt-6 flex flex-col gap-3">
-            <button onclick="forceOfflineMode()" class="bg-gray-800 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-gray-700 w-full">
-                Entrar Modo Offline
-            </button>
-            <p class="text-xs text-red-500 font-bold mt-2" id="error-display"></p>
-        </div>
-
-        <div id="debug-log"></div>
-    </div>
+    <div id="status-toast">Conectando...</div>
 
     <!-- Header -->
     <header class="bg-club-green text-white shadow-lg sticky top-0 z-50">
@@ -116,7 +97,8 @@
                     <h1 class="text-lg font-bold uppercase tracking-wide text-club-yellow leading-tight">Libertadores</h1>
                     <div class="flex items-center gap-1">
                         <p class="text-xs text-white/80">San Cristóbal</p>
-                        <span id="connection-status" class="w-2 h-2 rounded-full bg-red-500" title="Estado Conexión"></span>
+                        <!-- Indicador de Estado: Gris (Offline), Amarillo (Conectando), Verde (Online) -->
+                        <span id="connection-status" class="w-2.5 h-2.5 rounded-full bg-gray-400 border border-white/20" title="Estado Conexión"></span>
                     </div>
                 </div>
             </div>
@@ -132,9 +114,6 @@
         <!-- Edit Mode Banner -->
         <div id="edit-banner" class="hidden bg-orange-500 text-white text-xs font-bold text-center py-1">
             MODO EDICIÓN: Tocá para cambiar categoría o borrar.
-        </div>
-        <div id="offline-banner" class="hidden bg-gray-800 text-white text-xs font-bold text-center py-1">
-            MODO OFFLINE: Cambios no guardados en nube.
         </div>
     </header>
 
@@ -305,7 +284,7 @@
         let db;
         let isOnline = false;
 
-        // Datos locales por defecto
+        // Datos locales por defecto (Hardcode)
         let state = {
             deudas: [
                 { nombre: "Ali", categoria: "CT", items: ["$10k"] },
@@ -348,33 +327,43 @@
         const DOC_ID = 'estado_club';
         const COLL_ID = 'multas_lsc';
 
-        function logDebug(msg) {
-            console.log(msg);
-            const d = document.getElementById('debug-log');
-            if(d) d.innerText += `> ${msg}\n`;
-            document.getElementById('loading-status').innerText = msg;
+        // --- SISTEMA DE NOTIFICACIONES ---
+        function showToast(msg) {
+            const t = document.getElementById('status-toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            t.style.opacity = '1';
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.style.display='none', 300); }, 3000);
         }
 
-        function forceOfflineMode() {
-            logDebug("Entrando offline...");
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('offline-banner').classList.remove('hidden');
-            document.getElementById('connection-status').className = "w-2 h-2 rounded-full bg-gray-500";
-            isOnline = false;
-            refreshAll();
+        function updateStatus(status) {
+            const el = document.getElementById('connection-status');
+            if(status === 'online') {
+                el.className = "w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] border border-white/20";
+                el.title = "Conectado y Sincronizado";
+            } else if(status === 'connecting') {
+                el.className = "w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse border border-white/20";
+                el.title = "Conectando...";
+            } else {
+                el.className = "w-2.5 h-2.5 rounded-full bg-gray-400 border border-white/20";
+                el.title = "Modo Offline (Local)";
+            }
         }
+
+        // --- INICIALIZACIÓN (NO BLOQUEANTE) ---
+        
+        window.onload = function() {
+            // 1. Renderizar inmediato (Modo Optimista)
+            // Esto asegura que SIEMPRE veas la app, haya o no internet
+            refreshAll(); 
+            
+            // 2. Iniciar conexión en segundo plano
+            initFirebase();
+        };
 
         function initFirebase() {
-            logDebug("Iniciando...");
+            updateStatus('connecting');
             
-            // Timeout de seguridad
-            setTimeout(() => {
-                if (!document.getElementById('loading-screen').classList.contains('hidden')) {
-                    document.getElementById('loading-actions').classList.remove('hidden');
-                    document.getElementById('loading-status').innerText = "Esperando conexión...";
-                }
-            }, 3000);
-
             try {
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
@@ -382,70 +371,67 @@
                 
                 db = firebase.firestore();
                 
-                // Habilitar persistencia offline (CRÍTICO para mal internet)
-                db.enablePersistence()
+                // Habilitar persistencia offline (Cache local)
+                // Esto permite que la app funcione si se corta internet después de cargar
+                db.enablePersistence({ synchronizeTabs: true })
                     .catch((err) => {
-                        if (err.code == 'failed-precondition') {
-                            logDebug("Persistencia: múltiples pestañas abiertas");
-                        } else if (err.code == 'unimplemented') {
-                            logDebug("Persistencia: no soportado");
-                        }
+                        console.log("Persistencia no disponible:", err.code);
                     });
 
-                logDebug("Conectando DB...");
+                // Escuchar cambios
                 listenToUpdates();
+                
             } catch (e) {
-                console.error("Error init", e);
-                logDebug("Error: " + e.message);
-                document.getElementById('loading-actions').classList.remove('hidden');
-                document.getElementById('error-display').innerText = e.message;
+                console.error("Error init Firebase", e);
+                updateStatus('offline');
+                showToast("Error iniciando nube. Usando modo local.");
             }
         }
 
         function listenToUpdates() {
-            db.collection(COLL_ID).doc(DOC_ID).onSnapshot({
-                includeMetadataChanges: true 
-            }, (doc) => {
-                const loading = document.getElementById('loading-screen');
+            db.collection(COLL_ID).doc(DOC_ID).onSnapshot({ includeMetadataChanges: true }, (doc) => {
+                
+                // Determinar fuente de datos
+                const source = doc.metadata.fromCache ? "local" : "server";
                 
                 if (doc.exists) {
-                    logDebug("Datos ok");
                     state = doc.data();
+                    // Si viene del server, estamos online real
+                    if(source === 'server') {
+                        updateStatus('online');
+                        showToast("Datos actualizados");
+                    } else {
+                        // Si viene de caché local, puede que estemos offline
+                        updateStatus('connecting'); 
+                    }
+                    refreshAll();
                 } else {
-                    logDebug("Creando base...");
-                    saveState();
+                    // Documento no existe, lo creamos
+                    if(source === 'server') saveState();
                 }
 
-                // Check conexión real
-                const source = doc.metadata.fromCache ? "local" : "server";
-                const color = source === "server" ? "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)]" : "bg-yellow-500";
-                document.getElementById('connection-status').className = `w-2 h-2 rounded-full ${color}`;
-                
-                loading.classList.add('hidden');
-                isOnline = true;
-                refreshAll();
             }, (error) => {
-                console.error("Snapshot error:", error);
-                logDebug("Error conexión: " + error.code);
+                console.warn("Error conexión:", error.code);
+                // Si falla por permisos o red, nos quedamos con lo local sin molestar
+                updateStatus('offline');
                 
                 if (error.code === 'permission-denied') {
-                     // Auto-offline si falla permiso
-                     document.getElementById('error-display').innerText = "Permisos denegados (Revisar consola Firebase)";
-                     setTimeout(forceOfflineMode, 1500);
-                } else {
-                    document.getElementById('loading-actions').classList.remove('hidden');
+                     showToast("Error de Permisos. Revisa reglas.");
                 }
             });
         }
 
         function saveState() {
-            if(!db || !isOnline) {
-                console.warn("Offline: no se guarda en nube");
-                return;
-            }
+            if(!db) return;
+            // Guardamos sin bloquear la UI
             db.collection(COLL_ID).doc(DOC_ID).set(state)
-                .then(() => console.log("Guardado nube"))
-                .catch((e) => console.error("Error save", e));
+                .then(() => {
+                    // Éxito silencioso
+                })
+                .catch((e) => {
+                    console.warn("Error guardando:", e);
+                    showToast("No se pudo guardar en nube");
+                });
         }
 
         // --- LÓGICA DE NEGOCIO ---
@@ -974,7 +960,11 @@
             refreshAll();
         }
 
-        window.onload = initFirebase;
+        window.onload = function() {
+            // Renderiza primero, conecta después
+            refreshAll(); 
+            initFirebase();
+        };
         
         document.addEventListener('keydown', (e) => {
             if(e.key === "Escape") {
