@@ -74,8 +74,9 @@
 
         /* Loading Overlay */
         #loading-screen {
-            position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100;
+            position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
         }
     </style>
 </head>
@@ -83,9 +84,18 @@
 
     <!-- Loading Screen -->
     <div id="loading-screen">
-        <i class="fas fa-circle-notch fa-spin text-4xl text-club-green mb-4"></i>
-        <p class="text-gray-600 font-bold">Conectando al Club...</p>
-        <p class="text-xs text-red-500 mt-2 hidden" id="config-error">Falta Configuración Firebase</p>
+        <div id="loading-content">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-club-green mb-4"></i>
+            <p class="text-gray-600 font-bold mb-2">Conectando al Club...</p>
+            <p class="text-xs text-gray-400">Si tarda mucho, verifica tu conexión.</p>
+        </div>
+        <div id="loading-error" class="hidden">
+            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+            <p class="text-gray-800 font-bold mb-2" id="error-msg">Error de Conexión</p>
+            <button onclick="forceEnter()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold shadow-sm hover:bg-gray-300">
+                Entrar en Modo Local
+            </button>
+        </div>
     </div>
 
     <!-- Header -->
@@ -331,12 +341,26 @@
         const DOC_ID = 'estado_club'; // Nombre del documento en la nube
         const COLL_ID = 'multas_lsc'; // Nombre de la colección
 
+        function forceEnter() {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+
         function initFirebase() {
             if (!firebaseConfig.apiKey) {
-                document.getElementById('config-error').classList.remove('hidden');
-                document.getElementById('config-error').innerText = "Falta configurar las API Keys en el código.";
+                document.getElementById('loading-content').classList.add('hidden');
+                document.getElementById('loading-error').classList.remove('hidden');
+                document.getElementById('error-msg').innerText = "Falta Configuración";
                 return;
             }
+
+            // Timeout de seguridad: Si en 5 segundos no conecta, forzamos opción de entrar
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                if (!loader.classList.contains('hidden')) {
+                    document.getElementById('loading-content').innerHTML += 
+                        `<br><button onclick="forceEnter()" class="mt-4 bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold shadow-sm hover:bg-gray-300">Entrar de todas formas</button>`;
+                }
+            }, 5000);
 
             try {
                 firebase.initializeApp(firebaseConfig);
@@ -344,7 +368,9 @@
                 listenToUpdates();
             } catch (e) {
                 console.error("Error Firebase", e);
-                alert("Error conectando a la base de datos.");
+                document.getElementById('loading-content').classList.add('hidden');
+                document.getElementById('loading-error').classList.remove('hidden');
+                document.getElementById('error-msg').innerText = "Error SDK: " + e.message;
             }
         }
 
@@ -364,7 +390,15 @@
                 refreshAll();
             }, (error) => {
                 console.error("Error recibiendo datos:", error);
-                alert("Error de conexión. Verifica internet.");
+                
+                document.getElementById('loading-content').classList.add('hidden');
+                document.getElementById('loading-error').classList.remove('hidden');
+                
+                if (error.code === 'permission-denied') {
+                    document.getElementById('error-msg').innerText = "Permisos Denegados: Revisa las Reglas en Firebase (Modo Prueba).";
+                } else {
+                    document.getElementById('error-msg').innerText = "Sin Conexión";
+                }
             });
         }
 
