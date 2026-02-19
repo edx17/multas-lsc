@@ -97,7 +97,6 @@
                     <h1 class="text-lg font-bold uppercase tracking-wide text-club-yellow leading-tight">Libertadores</h1>
                     <div class="flex items-center gap-1">
                         <p class="text-xs text-white/80">San Cristóbal</p>
-                        <!-- Indicador de Estado: Gris (Offline), Amarillo (Conectando), Verde (Online) -->
                         <span id="connection-status" class="w-2.5 h-2.5 rounded-full bg-gray-400 border border-white/20" title="Estado Conexión"></span>
                     </div>
                 </div>
@@ -148,45 +147,32 @@
 
     <!-- Main -->
     <main class="container mx-auto p-4 max-w-4xl min-h-[50vh]">
-        
-        <!-- Tab: Deudas -->
         <section id="tab-deudas" class="space-y-4 animate-fade-in">
             <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2 rounded-r hide-on-edit">
                 <p class="text-xs text-blue-700">
                     <i class="fas fa-info-circle mr-1"></i> Toca una multa para cobrarla.
                 </p>
             </div>
-            
             <input type="text" id="search-deudas" onkeyup="renderDeudas()" placeholder="Buscar jugador..." class="w-full p-3 rounded-lg border border-gray-300 mb-2 focus:ring-2 focus:ring-club-green outline-none shadow-sm">
-            
-            <div id="list-deudas" class="grid gap-4 md:grid-cols-2">
-                <!-- JS Inject -->
-            </div>
+            <div id="list-deudas" class="grid gap-4 md:grid-cols-2"></div>
         </section>
 
-        <!-- Tab: Pendientes -->
         <section id="tab-pendientes" class="hidden space-y-4 animate-fade-in">
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-2 rounded-r hide-on-edit">
                  <p class="text-xs text-yellow-800">
                     <i class="fas fa-exclamation-triangle mr-1"></i> Jugadores que deben tirar la ruleta.
                 </p>
             </div>
-            <div id="list-pendientes" class="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100">
-                <!-- JS Inject -->
-            </div>
+            <div id="list-pendientes" class="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100"></div>
         </section>
 
-        <!-- Tab: Cobrados -->
         <section id="tab-cobrados" class="hidden space-y-4 animate-fade-in">
              <div class="flex justify-between items-center mb-2 px-1">
                 <h2 class="text-lg font-bold text-gray-800">Historial de Ingresos</h2>
                 <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full border" id="count-cobrados">0 pagos</span>
             </div>
-            <div id="list-cobrados" class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <!-- JS Inject -->
-            </div>
+            <div id="list-cobrados" class="bg-white rounded-xl shadow-sm overflow-hidden"></div>
         </section>
-
     </main>
 
     <!-- Modal Admin -->
@@ -197,7 +183,6 @@
                 <button onclick="toggleAdmin()" class="text-white hover:text-club-yellow transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-6 space-y-4">
-                
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipo de Acción</label>
                     <div class="grid grid-cols-3 gap-2">
@@ -206,7 +191,6 @@
                         <button onclick="setMode('pago')" id="mode-pago" class="p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-xs sm:text-sm shadow-sm hover:bg-gray-50">Pago</button>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-3 gap-3">
                     <div class="col-span-2">
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jugador</label>
@@ -222,12 +206,10 @@
                         </select>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1" id="label-concepto">Concepto / Multa</label>
                     <input type="text" id="input-concepto" class="w-full p-3 border border-gray-300 rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none text-base" placeholder="Ej: $10k, Peluca...">
                 </div>
-
                 <button onclick="guardarEntradaManual()" class="w-full bg-club-green text-white font-bold py-3.5 rounded-lg shadow-lg hover:bg-green-800 transition transform active:scale-[0.98] uppercase tracking-wide text-sm">
                     Guardar Cambios
                 </button>
@@ -239,23 +221,17 @@
     <div id="ruleta-modal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-fade-in text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-600 via-yellow-400 to-green-600"></div>
-
             <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2 text-yellow-600 text-2xl shadow-inner border-2 border-yellow-200">
                 <i class="fas fa-dice"></i>
             </div>
-            
             <div class="flex items-center justify-center gap-2 mb-1">
                 <h3 class="text-xl font-bold text-gray-800" id="ruleta-player">Jugador</h3>
                 <span id="ruleta-cat-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase">1ra</span>
             </div>
             <p class="text-xs text-gray-500 mb-6 uppercase tracking-wider" id="ruleta-motivo">Motivo</p>
-            
             <div class="bg-gray-100 rounded-xl p-6 mb-6 border-2 border-gray-200 relative min-h-[120px] flex items-center justify-center">
-                <div id="ruleta-display" class="text-2xl font-black text-gray-800 uppercase leading-tight">
-                    ¿Listo?
-                </div>
+                <div id="ruleta-display" class="text-2xl font-black text-gray-800 uppercase leading-tight">¿Listo?</div>
             </div>
-            
             <div class="grid grid-cols-1 gap-3">
                 <button id="btn-girar" onclick="girarRuleta()" class="py-3 px-4 rounded-lg bg-club-green text-white font-bold text-lg hover:bg-green-800 shadow-lg transform active:scale-95 transition-all">
                     GIRAR RULETA
@@ -269,7 +245,6 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
           apiKey: "AIzaSyBdYvEPLmHKJGadBsN1MGNsoSn-Py9UJw8",
           authDomain: "multas-lsc.firebaseapp.com",
@@ -280,54 +255,18 @@
           measurementId: "G-13GWJ414ZC"
         };
 
-        // --- 2. INICIALIZAR FIREBASE ---
         let db;
         let isOnline = false;
 
-        // Datos locales por defecto (Hardcode)
         let state = {
-            deudas: [
-                { nombre: "Ali", categoria: "CT", items: ["$10k"] },
-                { nombre: "Edu", categoria: "CT", items: ["20L agua", "$20k", "peluca", "cargar materiales"] },
-                { nombre: "Nico", categoria: "CT", items: ["Pasillo"] },
-                { nombre: "Aguinaco", categoria: "3ra", items: ["preparar vestuario", "Gomitas", "1 hora con inferiores"] },
-                { nombre: "Diaz", categoria: "3ra", items: ["Pasillo", "paredon"] },
-                { nombre: "Ferreyra", categoria: "3ra", items: ["10L agua", "Gomitas", "Gomitas", "Gomitas"] },
-                { nombre: "Mack", categoria: "3ra", items: ["10L agua", "Preparar vestuario"] },
-                { nombre: "Perviu", categoria: "3ra", items: ["Peluca"] },
-                { nombre: "Reyes", categoria: "3ra", items: ["$5k"] },
-                { nombre: "Tomasetig", categoria: "3ra", items: ["preparar vestuario"] },
-                { nombre: "Zeballos", categoria: "3ra", items: ["Prepara Vestuario", "Solo Fisico"] },
-                { nombre: "Almiron", categoria: "1ra", items: ["$20k", "Pasillo"] },
-                { nombre: "Arzani", categoria: "1ra", items: ["Peluca"] },
-                { nombre: "Benquet", categoria: "1ra", items: ["1 hora con inferiores", "carga materiales", "carga materiales"] },
-                { nombre: "Cabrera", categoria: "1ra", items: ["Gomitas", "10kg de fruta", "1 hora con inferiores", "Preparar vestuario", "$10k"] },
-                { nombre: "Del Palacio", categoria: "1ra", items: ["Gomitas"] },
-                { nombre: "Feta", categoria: "1ra", items: ["Lavar pecheras"] },
-                { nombre: "Frank", categoria: "1ra", items: ["Peluca", "Paredon"] },
-                { nombre: "Gregorio", categoria: "1ra", items: ["Pasillo", "10L agua", "Lavar pecheras", "Peluca", "Solo fisico"] },
-                { nombre: "Ledesma", categoria: "1ra", items: ["Pasillo", "Paredon", "$10k", "Cargar materiales", "prepara vestuario", "Solo físico", "solo fisico"] },
-                { nombre: "Quiroga", categoria: "1ra", items: ["Paredón", "Paredon", "Paredon", "Lavar pecheras", "Pasillo", "Pasillo", "$10k", "5k de fruta"] },
-                { nombre: "Reche", categoria: "1ra", items: ["Paredon"] },
-                { nombre: "Rumak", categoria: "1ra", items: ["$10k", "solo fisico"] },
-                { nombre: "Silva", categoria: "1ra", items: ["Gomitas", "5kg de frutas"] },
-                { nombre: "Smokvina", categoria: "1ra", items: ["1 hs con inferiores"] },
-                { nombre: "Stanizzi", categoria: "1ra", items: ["5kg de fruta", "Peluca", "Preparar vestuario", "Gomitas", "Gomitas", "Solo fisico"] }
-            ],
-            pendientes: [
-                { nombre: "Ferreyra", categoria: "3ra", motivos: ["Tarde 18/2"] },
-                { nombre: "Fluck", categoria: "3ra", motivos: ["Ausente 7/2", "Ausente Miercoles", "Ausente Jueves", "Ausente 13/2", "Ausente 17/2", "Ausente 18/2"] }
-            ],
-            cobrados: [
-                { nombre: "Coco", categoria: "CT", monto: "$10k", raw: 10000 },
-                { nombre: "Benquet", categoria: "1ra", monto: "$20k", raw: 20000 }
-            ]
+            deudas: [],
+            pendientes: [],
+            cobrados: []
         };
 
         const DOC_ID = 'estado_club';
         const COLL_ID = 'multas_lsc';
 
-        // --- SISTEMA DE NOTIFICACIONES ---
         function showToast(msg) {
             const t = document.getElementById('status-toast');
             t.innerText = msg;
@@ -340,120 +279,53 @@
             const el = document.getElementById('connection-status');
             if(status === 'online') {
                 el.className = "w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] border border-white/20";
-                el.title = "Conectado y Sincronizado";
             } else if(status === 'connecting') {
                 el.className = "w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse border border-white/20";
-                el.title = "Conectando...";
             } else {
                 el.className = "w-2.5 h-2.5 rounded-full bg-gray-400 border border-white/20";
-                el.title = "Modo Offline (Local)";
             }
         }
 
-        // --- INICIALIZACIÓN (NO BLOQUEANTE) ---
-        
         window.onload = function() {
-            // 1. Renderizar inmediato (Modo Optimista)
-            // Esto asegura que SIEMPRE veas la app, haya o no internet
             refreshAll(); 
-            
-            // 2. Iniciar conexión en segundo plano
             initFirebase();
         };
 
         function initFirebase() {
             updateStatus('connecting');
-            
             try {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
-                
-                // Habilitar persistencia offline (Cache local)
-                // Esto permite que la app funcione si se corta internet después de cargar
-                db.enablePersistence({ synchronizeTabs: true })
-                    .catch((err) => {
-                        console.log("Persistencia no disponible:", err.code);
-                    });
-
-                // Escuchar cambios
+                db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log(err.code));
                 listenToUpdates();
-                
             } catch (e) {
-                console.error("Error init Firebase", e);
                 updateStatus('offline');
-                showToast("Error iniciando nube. Usando modo local.");
+                showToast("Modo local.");
             }
         }
 
         function listenToUpdates() {
             db.collection(COLL_ID).doc(DOC_ID).onSnapshot({ includeMetadataChanges: true }, (doc) => {
-                
-                // Determinar fuente de datos
                 const source = doc.metadata.fromCache ? "local" : "server";
-                
                 if (doc.exists) {
                     state = doc.data();
-                    // Si viene del server, estamos online real
-                    if(source === 'server') {
-                        updateStatus('online');
-                        showToast("Datos actualizados");
-                    } else {
-                        // Si viene de caché local, puede que estemos offline
-                        updateStatus('connecting'); 
-                    }
+                    if(source === 'server') { updateStatus('online'); showToast("Datos actualizados"); }
                     refreshAll();
-                } else {
-                    // Documento no existe, lo creamos
-                    if(source === 'server') saveState();
-                }
-
-            }, (error) => {
-                console.warn("Error conexión:", error.code);
-                // Si falla por permisos o red, nos quedamos con lo local sin molestar
-                updateStatus('offline');
-                
-                if (error.code === 'permission-denied') {
-                     showToast("Error de Permisos. Revisa reglas.");
-                }
-            });
+                } else { if(source === 'server') saveState(); }
+            }, (error) => { updateStatus('offline'); });
         }
 
         function saveState() {
             if(!db) return;
-            // Guardamos sin bloquear la UI
-            db.collection(COLL_ID).doc(DOC_ID).set(state)
-                .then(() => {
-                    // Éxito silencioso
-                })
-                .catch((e) => {
-                    console.warn("Error guardando:", e);
-                    showToast("No se pudo guardar en nube");
-                });
+            db.collection(COLL_ID).doc(DOC_ID).set(state).catch(e => console.warn(e));
         }
 
-        // --- LÓGICA DE NEGOCIO ---
-        const ruletaBase = [
-            "$10.000",
-            "5kg de Frutas",
-            "10L de Agua",
-            "Gomitas",
-            "1 hora con inferiores",
-            "Cargar los materiales",
-            "Duplica (tira de nuevo)",
-            "Safa",
-            "Lava pecheras",
-            "Prepara vestuario",
-            "Peluca",
-            "Pasillo",
-            "Paredón"
-        ];
+        const ruletaBase = ["$10.000", "5kg de Frutas", "10L de Agua", "Gomitas", "1 hora con inferiores", "Cargar los materiales", "Duplica (tira de nuevo)", "Safa", "Lava pecheras", "Prepara vestuario", "Peluca", "Pasillo", "Paredón"];
 
         let activeRuleta = null; 
         let currentResult = null;
         let activeRuletaOptions = [];
+        let isDuplicating = false; // Flag para el multiplicador
         let isEditMode = false;
         let currentMode = 'multa';
 
@@ -478,29 +350,15 @@
         }
 
         function getPlayerCategory(nombre) {
-            if(!state.deudas) return '1ra';
             const allLists = [...(state.deudas||[]), ...(state.pendientes||[]), ...(state.cobrados||[])];
             const player = allLists.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
             return player ? (player.categoria || '1ra') : '1ra';
         }
 
         function calculateTotals() {
-            let totalDeuda = 0;
-            let totalRecaudado = 0;
-
-            if(state.deudas) {
-                state.deudas.forEach(p => {
-                    if(p.items) p.items.forEach(item => totalDeuda += parseMoney(item));
-                });
-            }
-
-            if(state.cobrados) {
-                state.cobrados.forEach(p => {
-                    if (p.raw) totalRecaudado += p.raw;
-                    else totalRecaudado += parseMoney(p.monto);
-                });
-            }
-
+            let totalDeuda = 0, totalRecaudado = 0;
+            if(state.deudas) state.deudas.forEach(p => { if(p.items) p.items.forEach(item => totalDeuda += parseMoney(item)); });
+            if(state.cobrados) state.cobrados.forEach(p => { totalRecaudado += p.raw || parseMoney(p.monto); });
             document.getElementById('total-deuda').innerText = `$${totalDeuda.toLocaleString('es-AR')}`;
             document.getElementById('total-recaudado').innerText = `$${totalRecaudado.toLocaleString('es-AR')}`;
             document.getElementById('count-cobrados').innerText = `${state.cobrados ? state.cobrados.length : 0} pagos`;
@@ -511,86 +369,50 @@
             renderDeudas();
             renderPendientes();
             renderCobrados();
-            
-            const allPlayers = new Set([
-                ...(state.deudas || []).map(d => d.nombre), 
-                ...(state.cobrados || []).map(c => c.nombre), 
-                ...(state.pendientes || []).map(p => p.nombre)
-            ]);
+            const allPlayers = new Set([...(state.deudas||[]).map(d=>d.nombre), ...(state.cobrados||[]).map(c=>c.nombre), ...(state.pendientes||[]).map(p=>p.nombre)]);
             document.getElementById('players-list').innerHTML = Array.from(allPlayers).sort().map(name => `<option value="${name}">`).join('');
         }
 
         function toggleEditMode() {
             isEditMode = !isEditMode;
             document.body.classList.toggle('edit-mode', isEditMode);
-            const btn = document.getElementById('btn-edit-mode');
-            const banner = document.getElementById('edit-banner');
-            
-            if (isEditMode) {
-                btn.classList.add('bg-orange-500', 'text-white');
-                btn.classList.remove('bg-white/10');
-                banner.classList.remove('hidden');
-            } else {
-                btn.classList.remove('bg-orange-500', 'text-white');
-                btn.classList.add('bg-white/10');
-                banner.classList.add('hidden');
-            }
+            const btn = document.getElementById('btn-edit-mode'), banner = document.getElementById('edit-banner');
+            if (isEditMode) { btn.classList.add('bg-orange-500', 'text-white'); btn.classList.remove('bg-white/10'); banner.classList.remove('hidden'); }
+            else { btn.classList.remove('bg-orange-500', 'text-white'); btn.classList.add('bg-white/10'); banner.classList.add('hidden'); }
         }
 
         function showTab(tabId) {
-            ['deudas', 'pendientes', 'cobrados'].forEach(t => {
-                document.getElementById('tab-' + t).classList.add('hidden');
-                document.getElementById('btn-' + t).classList.remove('tab-active', 'text-club-green');
-                document.getElementById('btn-' + t).classList.add('text-gray-400');
-            });
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            const btn = document.getElementById('btn-' + tabId);
-            btn.classList.add('tab-active', 'text-club-green');
-            btn.classList.remove('text-gray-400');
+            ['deudas', 'pendientes', 'cobrados'].forEach(t => { document.getElementById('tab-'+t).classList.add('hidden'); document.getElementById('btn-'+t).classList.remove('tab-active', 'text-club-green'); document.getElementById('btn-'+t).classList.add('text-gray-400'); });
+            document.getElementById('tab-'+tabId).classList.remove('hidden');
+            document.getElementById('btn-'+tabId).classList.add('tab-active', 'text-club-green');
+            document.getElementById('btn-'+tabId).classList.remove('text-gray-400');
         }
 
         function renderDeudas() {
-            const container = document.getElementById('list-deudas');
-            const searchVal = document.getElementById('search-deudas').value.toLowerCase();
-            
-            if(!state.deudas) { container.innerHTML = ""; return; }
-
-            const filtered = state.deudas
-                .filter(p => p.nombre.toLowerCase().includes(searchVal))
-                .sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-            container.innerHTML = filtered.map((p, pIndex) => {
-                let money = 0;
-                p.items.forEach(i => { const val = parseMoney(i); if(val > 0) money += val; });
-                const badgeClass = getCategoryBadgeClass(p.categoria || '1ra');
-
+            const container = document.getElementById('list-deudas'), searchVal = document.getElementById('search-deudas').value.toLowerCase();
+            if(!state.deudas) return;
+            container.innerHTML = state.deudas.filter(p => p.nombre.toLowerCase().includes(searchVal)).sort((a,b)=>a.nombre.localeCompare(b.nombre)).map((p, pIndex) => {
+                let money = 0; p.items.forEach(i => money += parseMoney(i));
                 return `
                 <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-400 relative">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-2">
                             <h3 class="font-bold text-lg text-gray-800">${p.nombre}</h3>
-                            <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass} badge-editable" title="Toca para cambiar">${p.categoria || '1ra'}</span>
-                            <button onclick="deletePlayer('${p.nombre}')" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full hover:bg-red-200 transition">
-                                <i class="fas fa-trash-alt text-xs"></i>
-                            </button>
+                            <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
+                            <button onclick="deletePlayer('${p.nombre}')" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
                         ${money > 0 ? `<span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">$${money.toLocaleString()}</span>` : ''}
                     </div>
                     <ul class="text-sm space-y-2">
-                        ${p.items.map((item, iIndex) => {
-                            const isMoney = parseMoney(item) > 0;
-                            return `
-                            <li class="flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100 hover:border-green-200">
+                        ${p.items.map((item, iIndex) => `
+                            <li class="flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100">
                                 <div class="flex items-center gap-2 flex-grow" onclick="if(!isEditMode) confirmarCobro('${p.nombre}', ${iIndex})">
-                                    <i class="fas ${isMoney ? 'fa-money-bill-wave text-green-600' : 'fa-bolt text-yellow-500'} text-xs w-4"></i>
-                                    <span class="${isMoney ? 'font-semibold text-gray-800' : 'text-gray-700'}">${item}</span>
+                                    <i class="fas ${parseMoney(item)>0 ? 'fa-money-bill-wave text-green-600' : 'fa-bolt text-yellow-500'} text-xs w-4"></i>
+                                    <span class="${parseMoney(item)>0 ? 'font-semibold text-gray-800' : 'text-gray-700'}">${item}</span>
                                 </div>
-                                <button onclick="deleteDeudaItem('${p.nombre}', ${iIndex})" class="edit-control text-red-500 hover:text-red-700 px-2">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                                <button onclick="deleteDeudaItem('${p.nombre}', ${iIndex})" class="edit-control text-red-500 px-2"><i class="fas fa-times"></i></button>
                                 <i class="fas fa-arrow-right text-gray-300 text-xs hide-on-edit"></i>
-                            </li>`;
-                        }).join('')}
+                            </li>`).join('')}
                     </ul>
                 </div>`;
             }).join('');
@@ -598,381 +420,172 @@
 
         function renderPendientes() {
             const container = document.getElementById('list-pendientes');
-            if(!state.pendientes) { container.innerHTML = ""; return; }
-            
-            const sorted = [...state.pendientes].sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-            if (sorted.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-gray-400"><i class="fas fa-check-circle text-4xl mb-2 text-green-100"></i><p>Nadie debe tirar la ruleta.</p></div>`;
-                return;
-            }
-
-            container.innerHTML = sorted.map((p, pIdx) => {
-                const badgeClass = getCategoryBadgeClass(p.categoria || '1ra');
-                return `
+            if(!state.pendientes || state.pendientes.length === 0) { container.innerHTML = `<div class="p-8 text-center text-gray-400"><p>Nadie debe tirar la ruleta.</p></div>`; return; }
+            container.innerHTML = [...state.pendientes].sort((a,b)=>a.nombre.localeCompare(b.nombre)).map((p, pIdx) => `
                 <div class="p-4 group">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold text-sm">
-                            ${p.nombre.charAt(0)}
-                        </div>
+                        <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold text-sm">${p.nombre.charAt(0)}</div>
                         <span class="font-bold text-gray-800 text-lg">${p.nombre}</span>
-                        <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass} badge-editable">${p.categoria || '1ra'}</span>
+                        <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
                     </div>
                     <div class="pl-11 space-y-2">
                         ${p.motivos.map((m, mIdx) => `
                             <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
                                 <span class="text-xs sm:text-sm text-gray-600 font-medium">${m}</span>
                                 <div class="flex items-center gap-2">
-                                    <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="hide-on-edit bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-yellow-400 active:scale-95 transition flex items-center gap-1">
-                                        <i class="fas fa-dice"></i> Tirar
-                                    </button>
-                                    <button onclick="deletePendiente('${p.nombre}', ${mIdx})" class="edit-control text-red-500 hover:text-red-700 p-1">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
+                                    <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="hide-on-edit bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold"><i class="fas fa-dice"></i> Tirar</button>
+                                    <button onclick="deletePendiente('${p.nombre}', ${mIdx})" class="edit-control text-red-500 p-1"><i class="fas fa-trash-alt"></i></button>
                                 </div>
-                            </div>
-                        `).join('')}
+                            </div>`).join('')}
                     </div>
-                </div>`;
-            }).join('');
+                </div>`).join('');
         }
 
         function renderCobrados() {
             const container = document.getElementById('list-cobrados');
-            if(!state.cobrados) { container.innerHTML = ""; return; }
-
-            const list = state.cobrados.map((item, index) => ({...item, originalIndex: index})).reverse();
-
-            if (list.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-gray-400"><p>No hay cobros registrados.</p></div>`;
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="divide-y divide-gray-100">
-                    ${list.map((p) => {
-                        return `
-                        <div class="p-4 flex justify-between items-center hover:bg-green-50 transition">
-                            <div class="flex items-center gap-3">
-                                <div class="bg-green-100 p-2 rounded-full text-green-600">
-                                    <i class="fas fa-check text-xs"></i>
-                                </div>
-                                <div>
-                                    <span class="font-semibold text-gray-700 block">${p.nombre}</span>
-                                    <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] text-gray-400 uppercase badge-editable cursor-pointer">${p.categoria || '1ra'}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 text-sm">
-                                    ${p.monto}
-                                </span>
-                                <button onclick="deleteCobrado(${p.originalIndex})" class="edit-control text-red-400 hover:text-red-600">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `}).join('')}
-                </div>
-            `;
+            if(!state.cobrados || state.cobrados.length === 0) { container.innerHTML = `<div class="p-8 text-center text-gray-400"><p>No hay cobros.</p></div>`; return; }
+            container.innerHTML = `<div class="divide-y divide-gray-100">${state.cobrados.map((p, index) => `
+                <div class="p-4 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-green-100 p-2 rounded-full text-green-600"><i class="fas fa-check text-xs"></i></div>
+                        <div><span class="font-semibold text-gray-700 block">${p.nombre}</span><span class="text-[10px] text-gray-400 uppercase">${p.categoria}</span></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border text-sm">${p.monto}</span>
+                        <button onclick="deleteCobrado(${index})" class="edit-control text-red-400"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>`).reverse().join('')}</div>`;
         }
 
-        // --- ACTIONS ---
+        function deleteDeudaItem(n, i) { if(!confirm("Borrar?")) return; const p = state.deudas.find(d=>d.nombre===n); p.items.splice(i,1); saveState(); refreshAll(); }
+        function deletePlayer(n) { if(!confirm("Borrar?")) return; state.deudas = state.deudas.filter(d=>d.nombre!==n); saveState(); refreshAll(); }
+        function deletePendiente(n, i) { if(!confirm("Borrar?")) return; const p = state.pendientes.find(d=>d.nombre===n); p.motivos.splice(i,1); if(p.motivos.length===0) state.pendientes = state.pendientes.filter(x=>x.nombre!==n); saveState(); refreshAll(); }
+        function deleteCobrado(i) { if(!confirm("Borrar?")) return; state.cobrados.splice(i,1); saveState(); refreshAll(); }
 
-        function deleteDeudaItem(nombre, iIdx) {
-            if(!confirm("¿Borrar esta multa?")) return;
-            const pIdx = state.deudas.findIndex(d => d.nombre === nombre);
-            if (pIdx === -1) return;
-
-            state.deudas[pIdx].items.splice(iIdx, 1);
-            saveState();
-            refreshAll();
-        }
-
-        function deletePlayer(nombre) {
-            if(!confirm("¿Borrar a este jugador y todas sus deudas?")) return;
-            const pIdx = state.deudas.findIndex(d => d.nombre === nombre);
-            if (pIdx > -1) {
-                state.deudas.splice(pIdx, 1);
-                saveState();
-                refreshAll();
-            }
-        }
-
-        function deletePendiente(nombre, mIdx) {
-            if(!confirm("¿Borrar esta tirada pendiente?")) return;
-            const pIdx = state.pendientes.findIndex(p => p.nombre === nombre);
-            if (pIdx === -1) return;
-
-            state.pendientes[pIdx].motivos.splice(mIdx, 1);
-            if(state.pendientes[pIdx].motivos.length === 0) {
-                state.pendientes.splice(pIdx, 1);
-            }
-            saveState();
-            refreshAll();
-        }
-
-        function deleteCobrado(index) {
-            if(!confirm("¿Borrar este registro de cobro?")) return;
-            state.cobrados.splice(index, 1);
-            saveState();
-            refreshAll();
-        }
-
-        function cycleCategory(playerName) {
+        function cycleCategory(n) {
             if (!isEditMode) return;
-            
-            const nextCat = { '1ra': '3ra', '3ra': 'CT', 'CT': '1ra' };
-            const current = getPlayerCategory(playerName);
-            const next = nextCat[current] || '1ra';
-            let updated = false;
-            
-            if(state.deudas) state.deudas.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
-            if(state.pendientes) state.pendientes.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
-            if(state.cobrados) state.cobrados.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
-
-            if (updated) {
-                saveState();
-                refreshAll();
-            }
+            const next = { '1ra': '3ra', '3ra': 'CT', 'CT': '1ra' };
+            const cur = getPlayerCategory(n);
+            [state.deudas, state.pendientes, state.cobrados].forEach(list => { if(list) list.forEach(p => { if(p.nombre===n) p.categoria = next[cur]; })});
+            saveState(); refreshAll();
         }
 
-        function confirmarCobro(nombre, itemIndex) {
-            if (isEditMode) return; 
-
-            const pIndex = state.deudas.findIndex(d => d.nombre === nombre);
-            if(pIndex === -1) return;
-            
-            const item = state.deudas[pIndex].items[itemIndex];
-            const categoria = state.deudas[pIndex].categoria || '1ra';
-
-            if(confirm(`¿Confirmas que ${nombre} pagó "${item}"?\n\nSe moverá a la lista de Cobrados.`)) {
-                state.deudas[pIndex].items.splice(itemIndex, 1);
-                if(state.deudas[pIndex].items.length === 0) state.deudas.splice(pIndex, 1);
-
+        function confirmarCobro(n, i) {
+            if (isEditMode) return;
+            const p = state.deudas.find(d=>d.nombre===n);
+            const item = p.items[i];
+            if(confirm(`Confirmar pago de ${n} por "${item}"?`)) {
+                p.items.splice(i, 1);
+                if(p.items.length===0) state.deudas = state.deudas.filter(x=>x.nombre!==n);
                 if(!state.cobrados) state.cobrados = [];
-                state.cobrados.push({
-                    nombre: nombre,
-                    categoria: categoria,
-                    monto: item,
-                    raw: parseMoney(item)
-                });
-
-                saveState(); 
-                refreshAll();
+                state.cobrados.push({ nombre: n, categoria: p.categoria, monto: item, raw: parseMoney(item) });
+                saveState(); refreshAll();
             }
         }
 
         // --- RULETA LOGIC ---
-        function getOpcionesPorCategoria(categoria) {
-            let opciones = [...ruletaBase]; 
-            if (categoria === '3ra') {
-                opciones = opciones.map(op => op === "$10.000" ? "$5.000" : op);
-                opciones = opciones.map(op => op === "10L de Agua" ? "5L de Agua" : op);
-            } else if (categoria === 'CT') {
-                opciones = opciones.filter(op => op !== "Duplica");
-            }
-            return opciones;
+        function getOpcionesPorCategoria(cat) {
+            let ops = [...ruletaBase]; 
+            if (cat === '3ra') ops = ops.map(o => o === "$10.000" ? "$5.000" : (o === "10L de Agua" ? "5L de Agua" : o));
+            else if (cat === 'CT') ops = ops.filter(o => o !== "Duplica (tira de nuevo)");
+            return ops;
         }
 
         function abrirRuleta(nombre, motivo) {
             if (isEditMode) return;
-            
             activeRuleta = { nombre, motivo };
             currentResult = null;
-            
-            const pendiente = state.pendientes.find(p => p.nombre === nombre);
-            const categoria = pendiente ? (pendiente.categoria || '1ra') : '1ra';
-            
-            activeRuletaOptions = getOpcionesPorCategoria(categoria);
-            
+            isDuplicating = false; // Reset multiplicador
+            const p = state.pendientes.find(x => x.nombre === nombre);
+            activeRuletaOptions = getOpcionesPorCategoria(p.categoria || '1ra');
             document.getElementById('ruleta-player').innerText = nombre;
             document.getElementById('ruleta-motivo').innerText = motivo;
-            
             const badge = document.getElementById('ruleta-cat-badge');
-            badge.innerText = categoria;
-            badge.className = `text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(categoria)}`;
-
+            badge.innerText = p.categoria || '1ra';
+            badge.className = `text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)}`;
             document.getElementById('ruleta-display').innerText = "¿Listo?";
             document.getElementById('ruleta-display').className = "text-2xl font-black text-gray-400 uppercase leading-tight";
-            document.getElementById('btn-girar').classList.remove('hidden');
+            const btn = document.getElementById('btn-girar');
+            btn.innerText = "GIRAR RULETA";
+            btn.className = "py-3 px-4 rounded-lg bg-club-green text-white font-bold text-lg shadow-lg transform active:scale-95 transition-all";
+            btn.classList.remove('hidden');
             document.getElementById('ruleta-actions').classList.add('hidden');
-            
             document.getElementById('ruleta-modal').classList.remove('hidden');
         }
 
         function girarRuleta() {
-            const display = document.getElementById('ruleta-display');
-            const btn = document.getElementById('btn-girar');
-            
+            const display = document.getElementById('ruleta-display'), btn = document.getElementById('btn-girar');
             btn.classList.add('hidden');
             display.className = "text-3xl font-black text-gray-800 uppercase leading-tight ruleta-anim";
-            
-            let speed = 50;
-            let counter = 0;
-            
+            let speed = 50, counter = 0;
             const run = () => {
-                const randomOpt = activeRuletaOptions[Math.floor(Math.random() * activeRuletaOptions.length)];
-                display.innerText = randomOpt;
-                
-                if(counter < 20) {
-                    counter++;
-                    setTimeout(run, speed);
-                } else if(counter < 30) {
-                    counter++;
-                    speed += 20; 
-                    setTimeout(run, speed);
-                } else {
-                    currentResult = randomOpt;
-                    display.className = "text-3xl font-black text-club-green uppercase leading-tight transform scale-110 transition-transform duration-300";
-                    document.getElementById('ruleta-actions').classList.remove('hidden');
-                    document.getElementById('ruleta-actions').className = "grid grid-cols-2 gap-3 animate-fade-in";
+                const opt = activeRuletaOptions[Math.floor(Math.random() * activeRuletaOptions.length)];
+                display.innerText = isDuplicating ? "2x " + opt : opt;
+                if(counter < 25) { counter++; setTimeout(run, speed); }
+                else if(counter < 35) { counter++; speed += 25; setTimeout(run, speed); }
+                else {
+                    if (opt === "Duplica (tira de nuevo)") {
+                        isDuplicating = true;
+                        display.className = "text-3xl font-black text-orange-500 uppercase leading-tight transform scale-110 transition-all";
+                        activeRuletaOptions = activeRuletaOptions.filter(o => o !== "Duplica (tira de nuevo)"); // Bloquear nueva duplicación
+                        btn.innerText = "TIRAR DE NUEVO (X2)";
+                        btn.className = "py-3 px-4 rounded-lg bg-orange-500 text-white font-bold text-lg shadow-lg active:scale-95";
+                        btn.classList.remove('hidden');
+                    } else {
+                        currentResult = isDuplicating ? "2x " + opt : opt;
+                        display.className = "text-3xl font-black text-club-green uppercase leading-tight transform scale-110 transition-all";
+                        const acts = document.getElementById('ruleta-actions');
+                        acts.classList.remove('hidden'); acts.className = "grid grid-cols-2 gap-3 animate-fade-in";
+                    }
                 }
             };
             run();
         }
 
-        function closeRuletaModal() {
-            document.getElementById('ruleta-modal').classList.add('hidden');
-            activeRuleta = null;
-        }
+        function closeRuletaModal() { document.getElementById('ruleta-modal').classList.add('hidden'); activeRuleta = null; }
 
         function confirmarRuleta() {
             if(!currentResult) return;
-
             const { nombre, motivo } = activeRuleta;
-
-            const pIdx = state.pendientes.findIndex(p => p.nombre === nombre);
-            let categoriaJugador = '1ra';
-            
-            if(pIdx !== -1) {
-                categoriaJugador = state.pendientes[pIdx].categoria || '1ra';
-                const mIdx = state.pendientes[pIdx].motivos.indexOf(motivo);
-                if (mIdx > -1) {
-                    state.pendientes[pIdx].motivos.splice(mIdx, 1);
-                }
-                if(state.pendientes[pIdx].motivos.length === 0) {
-                    state.pendientes.splice(pIdx, 1);
-                }
-            }
-
-            const dIdx = state.deudas.findIndex(d => d.nombre === nombre);
-            if(dIdx !== -1) {
-                state.deudas[dIdx].items.push(currentResult);
-                state.deudas[dIdx].categoria = categoriaJugador; 
-            } else {
-                state.deudas.push({ nombre: nombre, categoria: categoriaJugador, items: [currentResult] });
-            }
-
-            saveState();
-            closeRuletaModal();
-            refreshAll();
-            showTab('deudas');
+            const p = state.pendientes.find(x => x.nombre === nombre);
+            p.motivos = p.motivos.filter(m => m !== motivo);
+            if(p.motivos.length === 0) state.pendientes = state.pendientes.filter(x => x.nombre !== nombre);
+            const d = state.deudas.find(x => x.nombre === nombre);
+            if(d) d.items.push(currentResult); else state.deudas.push({ nombre, categoria: p.categoria, items: [currentResult] });
+            saveState(); closeRuletaModal(); refreshAll(); showTab('deudas');
         }
 
-        // --- ADMIN ---
-        function toggleAdmin() {
-            const modal = document.getElementById('admin-modal');
-            modal.classList.toggle('hidden');
-            if(!modal.classList.contains('hidden')) {
-                document.getElementById('input-jugador').focus();
-            }
+        function toggleAdmin() { document.getElementById('admin-modal').classList.toggle('hidden'); }
+        function setMode(m) {
+            currentMode = m;
+            ['multa', 'ruleta', 'pago'].forEach(x => document.getElementById('mode-'+x).className = "p-3 rounded-lg border font-bold text-xs shadow-sm");
+            const btn = document.getElementById('mode-'+m);
+            if(m==='multa') btn.className += " border-red-200 bg-red-50 text-red-700 ring-2 ring-red-500";
+            else if(m==='ruleta') btn.className += " border-yellow-200 bg-yellow-50 text-yellow-700 ring-2 ring-yellow-500";
+            else btn.className += " border-green-200 bg-green-50 text-green-700 ring-2 ring-green-500";
+            document.getElementById('label-concepto').innerText = m==='multa' ? "Concepto" : (m==='ruleta' ? "Motivo" : "Monto ($)");
+            document.getElementById('input-categoria').disabled = m==='pago';
         }
-
-        function setMode(mode) {
-            currentMode = mode;
-            const btnMulta = document.getElementById('mode-multa');
-            const btnRuleta = document.getElementById('mode-ruleta');
-            const btnPago = document.getElementById('mode-pago');
-            const labelC = document.getElementById('label-concepto');
-            const catSelect = document.getElementById('input-categoria');
-
-            const baseClass = "p-3 rounded-lg border font-bold text-xs sm:text-sm shadow-sm transition-all";
-            btnMulta.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
-            btnRuleta.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
-            btnPago.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
-
-            if (mode === 'multa') {
-                btnMulta.className = baseClass + " border-red-200 bg-red-50 text-red-700 ring-2 ring-red-500";
-                labelC.innerText = "Concepto / Multa";
-                catSelect.disabled = false;
-            } else if (mode === 'ruleta') {
-                btnRuleta.className = baseClass + " border-yellow-200 bg-yellow-50 text-yellow-700 ring-2 ring-yellow-500";
-                labelC.innerText = "Motivo (ej: Llegada Tarde)";
-                catSelect.disabled = false;
-            } else {
-                btnPago.className = baseClass + " border-green-200 bg-green-50 text-green-700 ring-2 ring-green-500";
-                labelC.innerText = "Monto Pagado ($)";
-                catSelect.disabled = true;
-            }
-        }
-
-        document.getElementById('input-jugador').addEventListener('input', function(e) {
-            const val = e.target.value;
-            const cat = getPlayerCategory(val);
-            document.getElementById('input-categoria').value = cat;
-        });
 
         function guardarEntradaManual() {
-            const nombreRaw = document.getElementById('input-jugador').value.trim();
-            const concepto = document.getElementById('input-concepto').value.trim();
-            const categoria = document.getElementById('input-categoria').value;
-
-            if (!nombreRaw || !concepto) {
-                alert("Completa los datos.");
-                return;
-            }
-
-            const nombre = nombreRaw.charAt(0).toUpperCase() + nombreRaw.slice(1);
-
-            if (currentMode === 'multa') {
-                const idx = state.deudas.findIndex(d => d.nombre.toLowerCase() === nombre.toLowerCase());
-                if (idx >= 0) {
-                    state.deudas[idx].items.push(concepto);
-                    state.deudas[idx].categoria = categoria; 
-                } else {
-                    state.deudas.push({ nombre: nombre, categoria: categoria, items: [concepto] });
-                }
+            const rawN = document.getElementById('input-jugador').value.trim(), c = document.getElementById('input-concepto').value.trim(), cat = document.getElementById('input-categoria').value;
+            if(!rawN || !c) return;
+            const n = rawN.charAt(0).toUpperCase() + rawN.slice(1);
+            if(currentMode==='multa') {
+                const d = state.deudas.find(x=>x.nombre===n);
+                if(d) d.items.push(c); else state.deudas.push({ nombre: n, categoria: cat, items: [c] });
                 showTab('deudas');
-            } else if (currentMode === 'ruleta') {
-                const idx = state.pendientes.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-                if (idx >= 0) {
-                    state.pendientes[idx].motivos.push(concepto);
-                    state.pendientes[idx].categoria = categoria;
-                } else {
-                    state.pendientes.push({ nombre: nombre, categoria: categoria, motivos: [concepto] });
-                }
+            } else if(currentMode==='ruleta') {
+                const p = state.pendientes.find(x=>x.nombre===n);
+                if(p) p.motivos.push(c); else state.pendientes.push({ nombre: n, categoria: cat, motivos: [c] });
                 showTab('pendientes');
             } else {
                 if(!state.cobrados) state.cobrados = [];
-                state.cobrados.push({ 
-                    nombre: nombre, 
-                    categoria: categoria,
-                    monto: concepto.includes('$') || parseMoney(concepto) > 0 ? concepto : concepto,
-                    raw: parseMoney(concepto) || 0
-                });
+                state.cobrados.push({ nombre: n, categoria: cat, monto: c, raw: parseMoney(c) });
                 showTab('cobrados');
             }
-
-            saveState(); 
-            document.getElementById('input-jugador').value = '';
-            document.getElementById('input-concepto').value = '';
-            toggleAdmin();
-            refreshAll();
+            saveState(); toggleAdmin(); refreshAll();
         }
-
-        window.onload = function() {
-            // Renderiza primero, conecta después
-            refreshAll(); 
-            initFirebase();
-        };
-        
-        document.addEventListener('keydown', (e) => {
-            if(e.key === "Escape") {
-                document.getElementById('admin-modal').classList.add('hidden');
-                document.getElementById('ruleta-modal').classList.add('hidden');
-            }
-        });
     </script>
 </body>
 </html>
-
