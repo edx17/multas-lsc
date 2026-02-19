@@ -6,6 +6,11 @@
     <title>Multas Libertadores de San Cristóbal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    
+    <!-- FIREBASE SDK (Compat version para usar directo en HTML) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --club-green: #00693E;
@@ -66,9 +71,22 @@
         body.edit-mode .badge-editable { cursor: pointer; border: 2px dashed currentColor; animation: pulse 2s infinite; }
         
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        /* Loading Overlay */
+        #loading-screen {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body class="min-h-screen pb-24 relative select-none">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <i class="fas fa-circle-notch fa-spin text-4xl text-club-green mb-4"></i>
+        <p class="text-gray-600 font-bold">Conectando al Club...</p>
+        <p class="text-xs text-red-500 mt-2 hidden" id="config-error">Falta Configuración Firebase</p>
+    </div>
 
     <!-- Header -->
     <header class="bg-club-green text-white shadow-lg sticky top-0 z-50">
@@ -250,73 +268,114 @@
     </div>
 
     <script>
-        // --- DATA & STORAGE ---
-        const STORAGE_KEY = 'multas_lsc_data_v1';
+        // --- 1. CONFIGURACIÓN FIREBASE (LLENAR ESTO) ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyBdYvEPLmHKJGadBsN1MGNsoSn-Py9UJw8",
+          authDomain: "multas-lsc.firebaseapp.com",
+          projectId: "multas-lsc",
+          storageBucket: "multas-lsc.firebasestorage.app",
+          messagingSenderId: "801638625656",
+          appId: "1:801638625656:web:036228edf5697af3f1588d",
+          measurementId: "G-13GWJ414ZC"
+        };
 
-        // Datos por defecto si no hay nada guardado
-        const defaultState = {
+        // --- 2. INICIALIZAR FIREBASE ---
+        let db;
+        let isOnline = false;
+
+        // Datos por defecto si la BD está vacía
+        let state = {
             deudas: [
-                { nombre: "Aguinaco", categoria: "1ra", items: ["preparar vestuario", "Gomitas", "1 hora con inferiores"] },
-                { nombre: "Sanma", categoria: "1ra", items: ["Gomitas"] },
-                { nombre: "Benquet", categoria: "1ra", items: ["1 hora con inferiores", "carga materiales", "carga materiales"] },
-                { nombre: "Edu", categoria: "1ra", items: ["20L agua", "$20k", "peluca", "cargar materiales"] },
-                { nombre: "Tomasetig", categoria: "1ra", items: ["preparar vestuario"] },
-                { nombre: "Reyes", categoria: "1ra", items: ["$5k"] },
-                { nombre: "Ali", categoria: "1ra", items: ["$10k"] },
-                { nombre: "Arzani", categoria: "1ra", items: ["Peluca"] },
-                { nombre: "Feta", categoria: "1ra", items: ["Lavar pecheras"] },
+                // CT
+                { nombre: "Ali", categoria: "CT", items: ["$10k"] },
+                { nombre: "Edu", categoria: "CT", items: ["20L agua", "$20k", "peluca", "cargar materiales"] },
+                { nombre: "Nico", categoria: "CT", items: ["Pasillo"] },
+                
+                // 3ra
+                { nombre: "Aguinaco", categoria: "3ra", items: ["preparar vestuario", "Gomitas", "1 hora con inferiores"] },
+                { nombre: "Diaz", categoria: "3ra", items: ["Pasillo", "paredon"] },
+                { nombre: "Ferreyra", categoria: "3ra", items: ["10L agua", "Gomitas", "Gomitas", "Gomitas"] },
+                { nombre: "Mack", categoria: "3ra", items: ["10L agua", "Preparar vestuario"] },
                 { nombre: "Perviu", categoria: "3ra", items: ["Peluca"] },
-                { nombre: "Mack", categoria: "1ra", items: ["Preparar vestuario"] },
+                { nombre: "Reyes", categoria: "3ra", items: ["$5k"] },
+                { nombre: "Tomasetig", categoria: "3ra", items: ["preparar vestuario"] },
+                { nombre: "Zeballos", categoria: "3ra", items: ["Prepara Vestuario", "Solo Fisico"] },
+
+                // 1ra
+                { nombre: "Almiron", categoria: "1ra", items: ["$20k", "Pasillo"] },
+                { nombre: "Arzani", categoria: "1ra", items: ["Peluca"] },
+                { nombre: "Benquet", categoria: "1ra", items: ["1 hora con inferiores", "carga materiales", "carga materiales"] },
+                { nombre: "Cabrera", categoria: "1ra", items: ["Gomitas", "10kg de fruta", "1 hora con inferiores", "Preparar vestuario", "$10k"] },
+                { nombre: "Del Palacio", categoria: "1ra", items: ["Gomitas"] },
+                { nombre: "Feta", categoria: "1ra", items: ["Lavar pecheras"] },
                 { nombre: "Frank", categoria: "1ra", items: ["Peluca", "Paredon"] },
+                { nombre: "Gregorio", categoria: "1ra", items: ["Pasillo", "10L agua", "Lavar pecheras", "Peluca", "Solo fisico"] },
+                { nombre: "Ledesma", categoria: "1ra", items: ["Pasillo", "Paredon", "$10k", "Cargar materiales", "prepara vestuario", "Solo físico", "solo fisico"] },
+                { nombre: "Quiroga", categoria: "1ra", items: ["Paredón", "Paredon", "Paredon", "Lavar pecheras", "Pasillo", "Pasillo", "$10k", "5k de fruta"] },
                 { nombre: "Reche", categoria: "1ra", items: ["Paredon"] },
                 { nombre: "Rumak", categoria: "1ra", items: ["$10k", "solo fisico"] },
-                { nombre: "Smokvina", categoria: "CT", items: ["1 hs con inferiores"] },
-                { nombre: "Almiron", categoria: "1ra", items: ["$20k", "Pasillo"] },
-                { nombre: "Gregorio", categoria: "1ra", items: ["Pasillo", "10L agua", "Lavar pecheras", "Peluca", "Solo fisico"] },
-                { nombre: "Stanizzi", categoria: "1ra", items: ["5kg de fruta", "Peluca", "Preparar vestuario", "Gomitas", "Gomitas", "Solo fisico"] },
-                { nombre: "Ledesma", categoria: "1ra", items: ["Pasillo", "Paredon", "$10k", "Cargar materiales", "prepara vestuario", "Solo físico", "solo fisico"] },
-                { nombre: "Cabrera", categoria: "1ra", items: ["Gomitas", "10kg de fruta", "1 hora con inferiores", "Preparar vestuario", "$10k"] },
-                { nombre: "Quiroga", categoria: "1ra", items: ["Paredón", "Paredon", "Paredon", "Lavar pecheras", "Pasillo", "Pasillo", "$10k", "5k de fruta"] },
                 { nombre: "Silva", categoria: "1ra", items: ["Gomitas", "5kg de frutas"] },
-                { nombre: "Del Palacio", categoria: "1ra", items: ["Gomitas"] }
+                { nombre: "Smokvina", categoria: "1ra", items: ["1 hs con inferiores"] },
+                { nombre: "Stanizzi", categoria: "1ra", items: ["5kg de fruta", "Peluca", "Preparar vestuario", "Gomitas", "Gomitas", "Solo fisico"] }
             ],
             pendientes: [
-                { nombre: "Ferreyra", categoria: "3ra", motivos: ["Ausente sabado 7", "Ausente entreno 13/2", "Ausente 17/2"] },
-                { nombre: "Fluck", categoria: "3ra", motivos: ["Ausente sabado 7", "Ausente miercoles", "Ausencia jueves", "Ausente entreno 13/2", "Ausente 17/2"] },
-                { nombre: "Tizi", categoria: "3ra", motivos: ["Ausente miercoles"] },
-                { nombre: "Perviu", categoria: "3ra", motivos: ["Post entreno viernes", "Tarde 17/2"] },
-                { nombre: "Benitez", categoria: "1ra", motivos: ["Wellness post partido sabado"] },
-                { nombre: "Silva", categoria: "1ra", motivos: ["Wellness post partido sabado"] },
-                { nombre: "Diaz", categoria: "3ra", motivos: ["Ausente 17/2"] },
-                { nombre: "Zeballos", categoria: "3ra", motivos: ["Ausente 17/2"] },
-                { nombre: "Mack", categoria: "1ra", motivos: ["Ausente 17/2"] }
+                { nombre: "Ferreyra", categoria: "3ra", motivos: ["Tarde 18/2"] },
+                { nombre: "Fluck", categoria: "3ra", motivos: ["Ausente 7/2", "Ausente Miercoles", "Ausente Jueves", "Ausente 13/2", "Ausente 17/2", "Ausente 18/2"] }
             ],
             cobrados: [
-                { nombre: "Coco", categoria: "1ra", monto: "$10k", raw: 10000 },
+                { nombre: "Coco", categoria: "CT", monto: "$10k", raw: 10000 },
                 { nombre: "Benquet", categoria: "1ra", monto: "$20k", raw: 20000 }
             ]
         };
 
-        // Inicializar estado cargando localStorage o default
-        function loadState() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                try {
-                    return JSON.parse(stored);
-                } catch (e) {
-                    console.error("Error cargando datos", e);
-                    return defaultState;
-                }
+        const DOC_ID = 'estado_club'; // Nombre del documento en la nube
+        const COLL_ID = 'multas_lsc'; // Nombre de la colección
+
+        function initFirebase() {
+            if (!firebaseConfig.apiKey) {
+                document.getElementById('config-error').classList.remove('hidden');
+                document.getElementById('config-error').innerText = "Falta configurar las API Keys en el código.";
+                return;
             }
-            return defaultState;
+
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                listenToUpdates();
+            } catch (e) {
+                console.error("Error Firebase", e);
+                alert("Error conectando a la base de datos.");
+            }
         }
 
-        // Guardar estado en localStorage
+        // --- 3. SINCRONIZACIÓN (MAGIA) ---
+        
+        // Escuchar cambios en tiempo real
+        function listenToUpdates() {
+            db.collection(COLL_ID).doc(DOC_ID).onSnapshot((doc) => {
+                const loading = document.getElementById('loading-screen');
+                if (doc.exists) {
+                    state = doc.data();
+                } else {
+                    // Si no existe (primera vez), lo creamos con vacío
+                    saveState();
+                }
+                loading.classList.add('hidden'); // Ocultar carga cuando llegan datos
+                refreshAll();
+            }, (error) => {
+                console.error("Error recibiendo datos:", error);
+                alert("Error de conexión. Verifica internet.");
+            });
+        }
+
+        // Guardar cambios en la nube
         function saveState() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            if(!db) return;
+            // Guardamos todo el objeto state en el documento
+            db.collection(COLL_ID).doc(DOC_ID).set(state)
+                .then(() => console.log("Guardado en nube"))
+                .catch((e) => alert("Error guardando: " + e.message));
         }
-
-        let state = loadState();
 
         const ruletaBase = [
             "$10.000",
@@ -335,7 +394,7 @@
         ];
 
         let currentMode = 'multa';
-        let activeRuleta = null; // { playerIndex, motivoIndex }
+        let activeRuleta = null; 
         let currentResult = null;
         let activeRuletaOptions = [];
         let isEditMode = false;
@@ -560,7 +619,6 @@
                 // state.deudas.splice(pIdx, 1); // Descomentar si querés borrar al jugador al quedarse sin deudas
             }
             saveState();
-            refreshAll();
         }
 
         function deletePlayer(nombre) {
@@ -569,7 +627,6 @@
             if (pIdx > -1) {
                 state.deudas.splice(pIdx, 1);
                 saveState();
-                refreshAll();
             }
         }
 
@@ -583,14 +640,12 @@
                 state.pendientes.splice(pIdx, 1);
             }
             saveState();
-            refreshAll();
         }
 
         function deleteCobrado(index) {
             if(!confirm("¿Borrar este registro de cobro?")) return;
             state.cobrados.splice(index, 1);
             saveState();
-            refreshAll();
         }
 
         function cycleCategory(playerName) {
@@ -616,7 +671,6 @@
 
             if (updated) {
                 saveState();
-                refreshAll();
             }
         }
 
@@ -645,7 +699,6 @@
                 });
 
                 saveState(); // Guardar cambios
-                refreshAll();
             }
         }
 
@@ -765,8 +818,6 @@
 
             saveState(); // Guardar cambios
             closeRuletaModal();
-            refreshAll();
-            showTab('deudas');
         }
 
         // --- ADMIN ---
@@ -858,10 +909,9 @@
             document.getElementById('input-jugador').value = '';
             document.getElementById('input-concepto').value = '';
             toggleAdmin();
-            refreshAll();
         }
 
-        window.onload = refreshAll;
+        window.onload = initFirebase;
         
         document.addEventListener('keydown', (e) => {
             if(e.key === "Escape") {
