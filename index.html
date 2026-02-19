@@ -58,6 +58,14 @@
         .badge-1ra { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
         .badge-3ra { background-color: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
         .badge-ct { background-color: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+        /* Edit Mode Controls */
+        .edit-control { display: none; }
+        body.edit-mode .edit-control { display: inline-flex; }
+        body.edit-mode .hide-on-edit { display: none; }
+        body.edit-mode .badge-editable { cursor: pointer; border: 2px dashed currentColor; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="min-h-screen pb-24 relative select-none">
@@ -75,9 +83,18 @@
                     <p class="text-xs text-white/80">San Cristóbal</p>
                 </div>
             </div>
-            <button onclick="toggleAdmin()" class="bg-club-yellow text-club-green px-3 py-2 rounded font-bold text-xs shadow hover:bg-yellow-400 transition flex items-center gap-1 active:scale-95">
-                <i class="fas fa-plus"></i> <span class="hidden sm:inline">Nueva Multa</span>
-            </button>
+            <div class="flex gap-2">
+                <button onclick="toggleEditMode()" id="btn-edit-mode" class="bg-white/10 text-white px-3 py-2 rounded font-bold text-xs shadow hover:bg-white/20 transition flex items-center gap-1 active:scale-95 border border-transparent">
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <button onclick="toggleAdmin()" class="bg-club-yellow text-club-green px-3 py-2 rounded font-bold text-xs shadow hover:bg-yellow-400 transition flex items-center gap-1 active:scale-95">
+                    <i class="fas fa-plus"></i> <span class="hidden sm:inline">Nueva</span>
+                </button>
+            </div>
+        </div>
+        <!-- Edit Mode Banner -->
+        <div id="edit-banner" class="hidden bg-orange-500 text-white text-xs font-bold text-center py-1">
+            MODO EDICIÓN ACTIVADO: Toca categorías para cambiarlas o la papelera para borrar.
         </div>
     </header>
 
@@ -115,9 +132,9 @@
         
         <!-- Tab: Deudas -->
         <section id="tab-deudas" class="space-y-4 animate-fade-in">
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2 rounded-r">
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2 rounded-r hide-on-edit">
                 <p class="text-xs text-blue-700">
-                    <i class="fas fa-info-circle mr-1"></i> Toca una multa específica para marcarla como <strong>cobrada</strong>.
+                    <i class="fas fa-info-circle mr-1"></i> Toca una multa para cobrarla.
                 </p>
             </div>
             
@@ -130,9 +147,9 @@
 
         <!-- Tab: Pendientes -->
         <section id="tab-pendientes" class="hidden space-y-4 animate-fade-in">
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-2 rounded-r">
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-2 rounded-r hide-on-edit">
                  <p class="text-xs text-yellow-800">
-                    <i class="fas fa-exclamation-triangle mr-1"></i> Jugadores que deben tirar la ruleta. Toca "Tirar" para ver su destino.
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Jugadores que deben tirar la ruleta.
                 </p>
             </div>
             <div id="list-pendientes" class="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100">
@@ -164,9 +181,10 @@
                 
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipo de Acción</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="setMode('multa')" id="mode-multa" class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-sm ring-2 ring-red-500 shadow-sm">Agregar Deuda</button>
-                        <button onclick="setMode('pago')" id="mode-pago" class="p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-sm shadow-sm hover:bg-gray-50">Registrar Pago</button>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setMode('multa')" id="mode-multa" class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-xs sm:text-sm ring-2 ring-red-500 shadow-sm">Deuda</button>
+                        <button onclick="setMode('ruleta')" id="mode-ruleta" class="p-3 rounded-lg border border-yellow-200 text-yellow-700 font-bold text-xs sm:text-sm shadow-sm hover:bg-yellow-50">Ruleta</button>
+                        <button onclick="setMode('pago')" id="mode-pago" class="p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-xs sm:text-sm shadow-sm hover:bg-gray-50">Pago</button>
                     </div>
                 </div>
 
@@ -320,6 +338,7 @@
         let activeRuleta = null; // { playerIndex, motivoIndex }
         let currentResult = null;
         let activeRuletaOptions = [];
+        let isEditMode = false;
 
         // --- UTILS ---
         function parseMoney(str) {
@@ -378,6 +397,23 @@
 
         // --- UI RENDER ---
 
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            document.body.classList.toggle('edit-mode', isEditMode);
+            const btn = document.getElementById('btn-edit-mode');
+            const banner = document.getElementById('edit-banner');
+            
+            if (isEditMode) {
+                btn.classList.add('bg-orange-500', 'text-white');
+                btn.classList.remove('bg-white/10');
+                banner.classList.remove('hidden');
+            } else {
+                btn.classList.remove('bg-orange-500', 'text-white');
+                btn.classList.add('bg-white/10');
+                banner.classList.add('hidden');
+            }
+        }
+
         function showTab(tabId) {
             ['deudas', 'pendientes', 'cobrados'].forEach(t => {
                 document.getElementById('tab-' + t).classList.add('hidden');
@@ -408,20 +444,27 @@
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-2">
                             <h3 class="font-bold text-lg text-gray-800">${p.nombre}</h3>
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass}">${p.categoria || '1ra'}</span>
+                            <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass} badge-editable" title="Toca para cambiar">${p.categoria || '1ra'}</span>
+                            <button onclick="deletePlayer(${pIndex})" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full hover:bg-red-200 transition">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
                         </div>
                         ${money > 0 ? `<span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">$${money.toLocaleString()}</span>` : ''}
                     </div>
                     <ul class="text-sm space-y-2">
                         ${p.items.map((item, iIndex) => {
                             const isMoney = parseMoney(item) > 0;
+                            // En modo edición el click borra, en normal cobra
                             return `
-                            <li onclick="confirmarCobro('${p.nombre}', ${iIndex})" class="interactive-item flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100 hover:border-green-200">
-                                <div class="flex items-center gap-2">
+                            <li class="flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100 hover:border-green-200">
+                                <div class="flex items-center gap-2 flex-grow" onclick="if(!isEditMode) confirmarCobro('${p.nombre}', ${iIndex})">
                                     <i class="fas ${isMoney ? 'fa-money-bill-wave text-green-600' : 'fa-bolt text-yellow-500'} text-xs w-4"></i>
                                     <span class="${isMoney ? 'font-semibold text-gray-800' : 'text-gray-700'}">${item}</span>
                                 </div>
-                                <i class="fas fa-arrow-right text-gray-300 text-xs"></i>
+                                <button onclick="deleteDeudaItem(${pIndex}, ${iIndex})" class="edit-control text-red-500 hover:text-red-700 px-2">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <i class="fas fa-arrow-right text-gray-300 text-xs hide-on-edit"></i>
                             </li>`;
                         }).join('')}
                     </ul>
@@ -447,15 +490,20 @@
                             ${p.nombre.charAt(0)}
                         </div>
                         <span class="font-bold text-gray-800 text-lg">${p.nombre}</span>
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass}">${p.categoria || '1ra'}</span>
+                        <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass} badge-editable">${p.categoria || '1ra'}</span>
                     </div>
                     <div class="pl-11 space-y-2">
                         ${p.motivos.map((m, mIdx) => `
                             <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
                                 <span class="text-xs sm:text-sm text-gray-600 font-medium">${m}</span>
-                                <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-yellow-400 active:scale-95 transition flex items-center gap-1">
-                                    <i class="fas fa-dice"></i> Tirar
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="hide-on-edit bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-yellow-400 active:scale-95 transition flex items-center gap-1">
+                                        <i class="fas fa-dice"></i> Tirar
+                                    </button>
+                                    <button onclick="deletePendiente(${pIdx}, ${mIdx})" class="edit-control text-red-500 hover:text-red-700 p-1">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -474,7 +522,12 @@
 
             container.innerHTML = `
                 <div class="divide-y divide-gray-100">
-                    ${list.map(p => `
+                    ${list.map((p, idx) => {
+                        // idx in reversed list logic needs actual index in state.cobrados
+                        // We map with original index if we want to delete correctly.
+                        const realIdx = state.cobrados.length - 1 - idx;
+                        
+                        return `
                         <div class="p-4 flex justify-between items-center hover:bg-green-50 transition">
                             <div class="flex items-center gap-3">
                                 <div class="bg-green-100 p-2 rounded-full text-green-600">
@@ -482,20 +535,91 @@
                                 </div>
                                 <div>
                                     <span class="font-semibold text-gray-700 block">${p.nombre}</span>
-                                    <span class="text-[10px] text-gray-400 uppercase">${p.categoria || '1ra'}</span>
+                                    <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] text-gray-400 uppercase badge-editable cursor-pointer">${p.categoria || '1ra'}</span>
                                 </div>
                             </div>
-                            <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 text-sm">
-                                ${p.monto}
-                            </span>
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 text-sm">
+                                    ${p.monto}
+                                </span>
+                                <button onclick="deleteCobrado(${realIdx})" class="edit-control text-red-400 hover:text-red-600">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
         }
 
+        // --- ACTIONS: EDIT / DELETE ---
+
+        function deleteDeudaItem(pIdx, iIdx) {
+            if(!confirm("¿Borrar esta multa?")) return;
+            state.deudas[pIdx].items.splice(iIdx, 1);
+            if(state.deudas[pIdx].items.length === 0) {
+                // Opcional: Borrar jugador si no tiene items, o dejarlo vacío
+                // state.deudas.splice(pIdx, 1);
+            }
+            saveState();
+            refreshAll();
+        }
+
+        function deletePlayer(pIdx) {
+            if(!confirm("¿Borrar a este jugador y todas sus deudas?")) return;
+            state.deudas.splice(pIdx, 1);
+            saveState();
+            refreshAll();
+        }
+
+        function deletePendiente(pIdx, mIdx) {
+            if(!confirm("¿Borrar esta tirada pendiente?")) return;
+            state.pendientes[pIdx].motivos.splice(mIdx, 1);
+            if(state.pendientes[pIdx].motivos.length === 0) {
+                state.pendientes.splice(pIdx, 1);
+            }
+            saveState();
+            refreshAll();
+        }
+
+        function deleteCobrado(realIdx) {
+            if(!confirm("¿Borrar este registro de cobro?")) return;
+            state.cobrados.splice(realIdx, 1);
+            saveState();
+            refreshAll();
+        }
+
+        function cycleCategory(playerName) {
+            if (!isEditMode) return;
+            
+            // Ciclo: 1ra -> 3ra -> CT -> 1ra
+            const nextCat = {
+                '1ra': '3ra',
+                '3ra': 'CT',
+                'CT': '1ra'
+            };
+
+            // Buscar categoría actual (primer match)
+            const current = getPlayerCategory(playerName);
+            const next = nextCat[current] || '1ra';
+
+            // Actualizar en TODAS las listas
+            let updated = false;
+            
+            state.deudas.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
+            state.pendientes.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
+            state.cobrados.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
+
+            if (updated) {
+                saveState();
+                refreshAll();
+            }
+        }
+
         // --- ACTIONS: COBRAR ---
         function confirmarCobro(nombre, itemIndex) {
+            if (isEditMode) return; // No cobrar en modo edición
+
             const pIndex = state.deudas.findIndex(d => d.nombre === nombre);
             if(pIndex === -1) return;
             
@@ -539,6 +663,8 @@
         }
 
         function abrirRuleta(nombre, motivo) {
+            if (isEditMode) return;
+            
             activeRuleta = { nombre, motivo };
             currentResult = null;
             
@@ -591,6 +717,7 @@
                     currentResult = randomOpt;
                     display.className = "text-3xl font-black text-club-green uppercase leading-tight transform scale-110 transition-transform duration-300";
                     document.getElementById('ruleta-actions').classList.remove('hidden');
+                    document.getElementById('ruleta-actions').classList.remove('hidden'); // Fixed: Show actions
                     document.getElementById('ruleta-actions').className = "grid grid-cols-2 gap-3 animate-fade-in";
                 }
             };
@@ -650,20 +777,28 @@
         function setMode(mode) {
             currentMode = mode;
             const btnMulta = document.getElementById('mode-multa');
+            const btnRuleta = document.getElementById('mode-ruleta');
             const btnPago = document.getElementById('mode-pago');
             const labelC = document.getElementById('label-concepto');
             const catSelect = document.getElementById('input-categoria');
 
+            // Reset classes
+            const baseClass = "p-3 rounded-lg border font-bold text-xs sm:text-sm shadow-sm transition-all";
+            btnMulta.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
+            btnRuleta.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
+            btnPago.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
+
             if (mode === 'multa') {
-                btnMulta.className = "p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-sm ring-2 ring-red-500 shadow-sm transition-all";
-                btnPago.className = "p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-sm shadow-sm hover:bg-gray-50 transition-all";
+                btnMulta.className = baseClass + " border-red-200 bg-red-50 text-red-700 ring-2 ring-red-500";
                 labelC.innerText = "Concepto / Multa";
                 catSelect.disabled = false;
+            } else if (mode === 'ruleta') {
+                btnRuleta.className = baseClass + " border-yellow-200 bg-yellow-50 text-yellow-700 ring-2 ring-yellow-500";
+                labelC.innerText = "Motivo (ej: Llegada Tarde)";
+                catSelect.disabled = false;
             } else {
-                btnMulta.className = "p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-sm shadow-sm hover:bg-gray-50 transition-all";
-                btnPago.className = "p-3 rounded-lg border border-green-200 bg-green-50 text-green-700 font-bold text-sm ring-2 ring-green-500 shadow-sm transition-all";
+                btnPago.className = baseClass + " border-green-200 bg-green-50 text-green-700 ring-2 ring-green-500";
                 labelC.innerText = "Monto Pagado ($)";
-                // Al pagar, la categoría es informativa, se intenta preservar la del jugador
                 catSelect.disabled = true;
             }
         }
@@ -691,11 +826,20 @@
                 const idx = state.deudas.findIndex(d => d.nombre.toLowerCase() === nombre.toLowerCase());
                 if (idx >= 0) {
                     state.deudas[idx].items.push(concepto);
-                    state.deudas[idx].categoria = categoria; // Actualizar categoría si cambia
+                    state.deudas[idx].categoria = categoria; 
                 } else {
                     state.deudas.push({ nombre: nombre, categoria: categoria, items: [concepto] });
                 }
                 showTab('deudas');
+            } else if (currentMode === 'ruleta') {
+                const idx = state.pendientes.findIndex(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+                if (idx >= 0) {
+                    state.pendientes[idx].motivos.push(concepto);
+                    state.pendientes[idx].categoria = categoria;
+                } else {
+                    state.pendientes.push({ nombre: nombre, categoria: categoria, motivos: [concepto] });
+                }
+                showTab('pendientes');
             } else {
                 state.cobrados.push({ 
                     nombre: nombre, 
