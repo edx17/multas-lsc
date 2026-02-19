@@ -445,7 +445,7 @@
                         <div class="flex items-center gap-2">
                             <h3 class="font-bold text-lg text-gray-800">${p.nombre}</h3>
                             <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass} badge-editable" title="Toca para cambiar">${p.categoria || '1ra'}</span>
-                            <button onclick="deletePlayer(${pIndex})" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full hover:bg-red-200 transition">
+                            <button onclick="deletePlayer('${p.nombre}')" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full hover:bg-red-200 transition">
                                 <i class="fas fa-trash-alt text-xs"></i>
                             </button>
                         </div>
@@ -454,14 +454,13 @@
                     <ul class="text-sm space-y-2">
                         ${p.items.map((item, iIndex) => {
                             const isMoney = parseMoney(item) > 0;
-                            // En modo edición el click borra, en normal cobra
                             return `
                             <li class="flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100 hover:border-green-200">
                                 <div class="flex items-center gap-2 flex-grow" onclick="if(!isEditMode) confirmarCobro('${p.nombre}', ${iIndex})">
                                     <i class="fas ${isMoney ? 'fa-money-bill-wave text-green-600' : 'fa-bolt text-yellow-500'} text-xs w-4"></i>
                                     <span class="${isMoney ? 'font-semibold text-gray-800' : 'text-gray-700'}">${item}</span>
                                 </div>
-                                <button onclick="deleteDeudaItem(${pIndex}, ${iIndex})" class="edit-control text-red-500 hover:text-red-700 px-2">
+                                <button onclick="deleteDeudaItem('${p.nombre}', ${iIndex})" class="edit-control text-red-500 hover:text-red-700 px-2">
                                     <i class="fas fa-times"></i>
                                 </button>
                                 <i class="fas fa-arrow-right text-gray-300 text-xs hide-on-edit"></i>
@@ -500,7 +499,7 @@
                                     <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="hide-on-edit bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-yellow-400 active:scale-95 transition flex items-center gap-1">
                                         <i class="fas fa-dice"></i> Tirar
                                     </button>
-                                    <button onclick="deletePendiente(${pIdx}, ${mIdx})" class="edit-control text-red-500 hover:text-red-700 p-1">
+                                    <button onclick="deletePendiente('${p.nombre}', ${mIdx})" class="edit-control text-red-500 hover:text-red-700 p-1">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
@@ -513,7 +512,8 @@
 
         function renderCobrados() {
             const container = document.getElementById('list-cobrados');
-            const list = [...state.cobrados].reverse();
+            // Mapeamos el índice original antes de revertir
+            const list = state.cobrados.map((item, index) => ({...item, originalIndex: index})).reverse();
 
             if (list.length === 0) {
                 container.innerHTML = `<div class="p-8 text-center text-gray-400"><p>No hay cobros registrados.</p></div>`;
@@ -522,11 +522,7 @@
 
             container.innerHTML = `
                 <div class="divide-y divide-gray-100">
-                    ${list.map((p, idx) => {
-                        // idx in reversed list logic needs actual index in state.cobrados
-                        // We map with original index if we want to delete correctly.
-                        const realIdx = state.cobrados.length - 1 - idx;
-                        
+                    ${list.map((p) => {
                         return `
                         <div class="p-4 flex justify-between items-center hover:bg-green-50 transition">
                             <div class="flex items-center gap-3">
@@ -542,7 +538,7 @@
                                 <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 text-sm">
                                     ${p.monto}
                                 </span>
-                                <button onclick="deleteCobrado(${realIdx})" class="edit-control text-red-400 hover:text-red-600">
+                                <button onclick="deleteCobrado(${p.originalIndex})" class="edit-control text-red-400 hover:text-red-600">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
@@ -554,26 +550,34 @@
 
         // --- ACTIONS: EDIT / DELETE ---
 
-        function deleteDeudaItem(pIdx, iIdx) {
+        function deleteDeudaItem(nombre, iIdx) {
             if(!confirm("¿Borrar esta multa?")) return;
+            const pIdx = state.deudas.findIndex(d => d.nombre === nombre);
+            if (pIdx === -1) return;
+
             state.deudas[pIdx].items.splice(iIdx, 1);
             if(state.deudas[pIdx].items.length === 0) {
-                // Opcional: Borrar jugador si no tiene items, o dejarlo vacío
-                // state.deudas.splice(pIdx, 1);
+                // state.deudas.splice(pIdx, 1); // Descomentar si querés borrar al jugador al quedarse sin deudas
             }
             saveState();
             refreshAll();
         }
 
-        function deletePlayer(pIdx) {
+        function deletePlayer(nombre) {
             if(!confirm("¿Borrar a este jugador y todas sus deudas?")) return;
-            state.deudas.splice(pIdx, 1);
-            saveState();
-            refreshAll();
+            const pIdx = state.deudas.findIndex(d => d.nombre === nombre);
+            if (pIdx > -1) {
+                state.deudas.splice(pIdx, 1);
+                saveState();
+                refreshAll();
+            }
         }
 
-        function deletePendiente(pIdx, mIdx) {
+        function deletePendiente(nombre, mIdx) {
             if(!confirm("¿Borrar esta tirada pendiente?")) return;
+            const pIdx = state.pendientes.findIndex(p => p.nombre === nombre);
+            if (pIdx === -1) return;
+
             state.pendientes[pIdx].motivos.splice(mIdx, 1);
             if(state.pendientes[pIdx].motivos.length === 0) {
                 state.pendientes.splice(pIdx, 1);
@@ -582,9 +586,9 @@
             refreshAll();
         }
 
-        function deleteCobrado(realIdx) {
+        function deleteCobrado(index) {
             if(!confirm("¿Borrar este registro de cobro?")) return;
-            state.cobrados.splice(realIdx, 1);
+            state.cobrados.splice(index, 1);
             saveState();
             refreshAll();
         }
