@@ -442,7 +442,7 @@
             "Gomitas",
             "1 hora con inferiores",
             "Cargar los materiales",
-            "Solo Fisico",
+            "Duplica (tira de nuevo)",
             "Safa",
             "Lava pecheras",
             "Prepara vestuario",
@@ -769,7 +769,7 @@
                 opciones = opciones.map(op => op === "$10.000" ? "$5.000" : op);
                 opciones = opciones.map(op => op === "10L de Agua" ? "5L de Agua" : op);
             } else if (categoria === 'CT') {
-                opciones = opciones.filter(op => op !== "Solo Fisico");
+                opciones = opciones.filter(op => op !== "Duplica");
             }
             return opciones;
         }
@@ -975,3 +975,4 @@
     </script>
 </body>
 </html>
+
