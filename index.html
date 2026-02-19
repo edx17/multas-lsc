@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multas Libertadores de San Cristóbal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        :root {
+            --club-green: #00693E;
+            --club-yellow: #FFD700;
+            --club-white: #FFFFFF;
+        }
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bg-club-green { background-color: var(--club-green); }
+        .text-club-green { color: var(--club-green); }
+        .border-club-green { border-color: var(--club-green); }
+        .bg-club-yellow { background-color: var(--club-yellow); }
+        .text-club-yellow { color: var(--club-yellow); }
+        
+        .tab-active {
+            border-bottom: 4px solid var(--club-green);
+            color: var(--club-green);
+            background-color: #fff;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .interactive-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .interactive-item:hover {
+            background-color: #f0fdf4;
+            transform: translateX(4px);
+        }
+        .interactive-item:active {
+            background-color: #dcfce7;
+            transform: scale(0.98);
+        }
+
+        .ruleta-anim {
+            transition: all 0.1s;
+        }
+
+        /* Badges Categorias */
+        .badge-1ra { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-3ra { background-color: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+        .badge-ct { background-color: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    </style>
+</head>
+<body class="min-h-screen pb-24 relative select-none">
+
+    <!-- Header -->
+    <header class="bg-club-green text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center border-2 border-club-yellow shadow-md overflow-hidden p-1">
+                    <img src="EscudoLiber.png" alt="Escudo LSC" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                    <span class="font-bold text-club-green text-xs text-center leading-tight hidden">L.S.C.<br><i class="fas fa-shield-alt"></i></span>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold uppercase tracking-wide text-club-yellow leading-tight">Libertadores</h1>
+                    <p class="text-xs text-white/80">San Cristóbal</p>
+                </div>
+            </div>
+            <button onclick="toggleAdmin()" class="bg-club-yellow text-club-green px-3 py-2 rounded font-bold text-xs shadow hover:bg-yellow-400 transition flex items-center gap-1 active:scale-95">
+                <i class="fas fa-plus"></i> <span class="hidden sm:inline">Nueva Multa</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Resumen -->
+    <div class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="container mx-auto px-4 py-4 grid grid-cols-2 gap-4">
+            <div class="bg-red-50 p-3 rounded-lg border border-red-100 flex flex-col justify-center">
+                <p class="text-[10px] sm:text-xs text-red-600 uppercase font-bold mb-1 tracking-wider">Deuda Pendiente</p>
+                <h3 class="text-xl sm:text-2xl font-black text-red-700" id="total-deuda">$0</h3>
+            </div>
+            <div class="bg-green-50 p-3 rounded-lg border border-green-100 flex flex-col justify-center">
+                <p class="text-[10px] sm:text-xs text-green-600 uppercase font-bold mb-1 tracking-wider">Caja Actual</p>
+                <h3 class="text-xl sm:text-2xl font-black text-green-700" id="total-recaudado">$0</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación -->
+    <nav class="bg-white shadow-sm sticky top-[72px] z-40">
+        <div class="container mx-auto flex justify-around text-center border-b border-gray-100">
+            <button onclick="showTab('deudas')" id="btn-deudas" class="py-3 px-2 text-xs sm:text-sm uppercase font-bold flex-1 tab-active transition-colors flex flex-col items-center justify-center gap-1">
+                <i class="fas fa-file-invoice-dollar text-base"></i> Deudas
+            </button>
+            <button onclick="showTab('pendientes')" id="btn-pendientes" class="py-3 px-2 text-xs sm:text-sm uppercase font-bold flex-1 text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center gap-1">
+                <i class="fas fa-dice text-base"></i> Ruleta
+            </button>
+            <button onclick="showTab('cobrados')" id="btn-cobrados" class="py-3 px-2 text-xs sm:text-sm uppercase font-bold flex-1 text-gray-400 hover:text-gray-600 transition-colors flex flex-col items-center justify-center gap-1">
+                <i class="fas fa-check-circle text-base"></i> Cobrados
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="container mx-auto p-4 max-w-4xl min-h-[50vh]">
+        
+        <!-- Tab: Deudas -->
+        <section id="tab-deudas" class="space-y-4 animate-fade-in">
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2 rounded-r">
+                <p class="text-xs text-blue-700">
+                    <i class="fas fa-info-circle mr-1"></i> Toca una multa específica para marcarla como <strong>cobrada</strong>.
+                </p>
+            </div>
+            
+            <input type="text" id="search-deudas" onkeyup="renderDeudas()" placeholder="Buscar jugador..." class="w-full p-3 rounded-lg border border-gray-300 mb-2 focus:ring-2 focus:ring-club-green outline-none shadow-sm">
+            
+            <div id="list-deudas" class="grid gap-4 md:grid-cols-2">
+                <!-- JS Inject -->
+            </div>
+        </section>
+
+        <!-- Tab: Pendientes -->
+        <section id="tab-pendientes" class="hidden space-y-4 animate-fade-in">
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-2 rounded-r">
+                 <p class="text-xs text-yellow-800">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Jugadores que deben tirar la ruleta. Toca "Tirar" para ver su destino.
+                </p>
+            </div>
+            <div id="list-pendientes" class="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100">
+                <!-- JS Inject -->
+            </div>
+        </section>
+
+        <!-- Tab: Cobrados -->
+        <section id="tab-cobrados" class="hidden space-y-4 animate-fade-in">
+             <div class="flex justify-between items-center mb-2 px-1">
+                <h2 class="text-lg font-bold text-gray-800">Historial de Ingresos</h2>
+                <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full border" id="count-cobrados">0 pagos</span>
+            </div>
+            <div id="list-cobrados" class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <!-- JS Inject -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Admin -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-end sm:items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+            <div class="bg-club-green p-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg"><i class="fas fa-edit mr-2"></i>Nueva Entrada</h3>
+                <button onclick="toggleAdmin()" class="text-white hover:text-club-yellow transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipo de Acción</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setMode('multa')" id="mode-multa" class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-sm ring-2 ring-red-500 shadow-sm">Agregar Deuda</button>
+                        <button onclick="setMode('pago')" id="mode-pago" class="p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-sm shadow-sm hover:bg-gray-50">Registrar Pago</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jugador</label>
+                        <input type="text" id="input-jugador" list="players-list" class="w-full p-3 border border-gray-300 rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none text-base" placeholder="Nombre">
+                        <datalist id="players-list"></datalist>
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Categoría</label>
+                        <select id="input-categoria" class="w-full p-3 border border-gray-300 rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none text-base bg-white">
+                            <option value="1ra" selected>1ra</option>
+                            <option value="3ra">3ra</option>
+                            <option value="CT">CT</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1" id="label-concepto">Concepto / Multa</label>
+                    <input type="text" id="input-concepto" class="w-full p-3 border border-gray-300 rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none text-base" placeholder="Ej: $10k, Peluca...">
+                </div>
+
+                <button onclick="guardarEntradaManual()" class="w-full bg-club-green text-white font-bold py-3.5 rounded-lg shadow-lg hover:bg-green-800 transition transform active:scale-[0.98] uppercase tracking-wide text-sm">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ruleta -->
+    <div id="ruleta-modal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-fade-in text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-600 via-yellow-400 to-green-600"></div>
+
+            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2 text-yellow-600 text-2xl shadow-inner border-2 border-yellow-200">
+                <i class="fas fa-dice"></i>
+            </div>
+            
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <h3 class="text-xl font-bold text-gray-800" id="ruleta-player">Jugador</h3>
+                <span id="ruleta-cat-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase">1ra</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-6 uppercase tracking-wider" id="ruleta-motivo">Motivo</p>
+            
+            <div class="bg-gray-100 rounded-xl p-6 mb-6 border-2 border-gray-200 relative min-h-[120px] flex items-center justify-center">
+                <div id="ruleta-display" class="text-2xl font-black text-gray-800 uppercase leading-tight">
+                    ¿Listo?
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-3">
+                <button id="btn-girar" onclick="girarRuleta()" class="py-3 px-4 rounded-lg bg-club-green text-white font-bold text-lg hover:bg-green-800 shadow-lg transform active:scale-95 transition-all">
+                    GIRAR RULETA
+                </button>
+                <div id="ruleta-actions" class="hidden grid grid-cols-2 gap-3">
+                    <button onclick="closeRuletaModal()" class="py-2 px-4 rounded-lg border border-gray-300 text-gray-600 font-bold hover:bg-gray-50">Cancelar</button>
+                    <button onclick="confirmarRuleta()" class="py-2 px-4 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 shadow-md">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & STORAGE ---
+        const STORAGE_KEY = 'multas_lsc_data_v1';
+
+        // Datos por defecto si no hay nada guardado
+        const defaultState = {
+            deudas: [
+                { nombre: "Aguinaco", categoria: "1ra", items: ["preparar vestuario", "Gomitas", "1 hora con inferiores"] },
+                { nombre: "Sanma", categoria: "1ra", items: ["Gomitas"] },
+                { nombre: "Benquet", categoria: "1ra", items: ["1 hora con inferiores", "carga materiales", "carga materiales"] },
+                { nombre: "Edu", categoria: "1ra", items: ["20L agua", "$20k", "peluca", "cargar materiales"] },
+                { nombre: "Tomasetig", categoria: "1ra", items: ["preparar vestuario"] },
+                { nombre: "Reyes", categoria: "1ra", items: ["$5k"] },
+                { nombre: "Ali", categoria: "1ra", items: ["$10k"] },
+                { nombre: "Arzani", categoria: "1ra", items: ["Peluca"] },
+                { nombre: "Feta", categoria: "1ra", items: ["Lavar pecheras"] },
+                { nombre: "Perviu", categoria: "3ra", items: ["Peluca"] },
+                { nombre: "Mack", categoria: "1ra", items: ["Preparar vestuario"] },
+                { nombre: "Frank", categoria: "1ra", items: ["Peluca", "Paredon"] },
+                { nombre: "Reche", categoria: "1ra", items: ["Paredon"] },
+                { nombre: "Rumak", categoria: "1ra", items: ["$10k", "solo fisico"] },
+                { nombre: "Smokvina", categoria: "CT", items: ["1 hs con inferiores"] },
+                { nombre: "Almiron", categoria: "1ra", items: ["$20k", "Pasillo"] },
+                { nombre: "Gregorio", categoria: "1ra", items: ["Pasillo", "10L agua", "Lavar pecheras", "Peluca", "Solo fisico"] },
+                { nombre: "Stanizzi", categoria: "1ra", items: ["5kg de fruta", "Peluca", "Preparar vestuario", "Gomitas", "Gomitas", "Solo fisico"] },
+                { nombre: "Ledesma", categoria: "1ra", items: ["Pasillo", "Paredon", "$10k", "Cargar materiales", "prepara vestuario", "Solo físico", "solo fisico"] },
+                { nombre: "Cabrera", categoria: "1ra", items: ["Gomitas", "10kg de fruta", "1 hora con inferiores", "Preparar vestuario", "$10k"] },
+                { nombre: "Quiroga", categoria: "1ra", items: ["Paredón", "Paredon", "Paredon", "Lavar pecheras", "Pasillo", "Pasillo", "$10k", "5k de fruta"] },
+                { nombre: "Silva", categoria: "1ra", items: ["Gomitas", "5kg de frutas"] },
+                { nombre: "Del Palacio", categoria: "1ra", items: ["Gomitas"] }
+            ],
+            pendientes: [
+                { nombre: "Ferreyra", categoria: "3ra", motivos: ["Ausente sabado 7", "Ausente entreno 13/2", "Ausente 17/2"] },
+                { nombre: "Fluck", categoria: "3ra", motivos: ["Ausente sabado 7", "Ausente miercoles", "Ausencia jueves", "Ausente entreno 13/2", "Ausente 17/2"] },
+                { nombre: "Tizi", categoria: "3ra", motivos: ["Ausente miercoles"] },
+                { nombre: "Perviu", categoria: "3ra", motivos: ["Post entreno viernes", "Tarde 17/2"] },
+                { nombre: "Benitez", categoria: "1ra", motivos: ["Wellness post partido sabado"] },
+                { nombre: "Silva", categoria: "1ra", motivos: ["Wellness post partido sabado"] },
+                { nombre: "Diaz", categoria: "3ra", motivos: ["Ausente 17/2"] },
+                { nombre: "Zeballos", categoria: "3ra", motivos: ["Ausente 17/2"] },
+                { nombre: "Mack", categoria: "1ra", motivos: ["Ausente 17/2"] }
+            ],
+            cobrados: [
+                { nombre: "Coco", categoria: "1ra", monto: "$10k", raw: 10000 },
+                { nombre: "Benquet", categoria: "1ra", monto: "$20k", raw: 20000 }
+            ]
+        };
+
+        // Inicializar estado cargando localStorage o default
+        function loadState() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch (e) {
+                    console.error("Error cargando datos", e);
+                    return defaultState;
+                }
+            }
+            return defaultState;
+        }
+
+        // Guardar estado en localStorage
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        let state = loadState();
+
+        const ruletaBase = [
+            "$10.000",
+            "5kg de Frutas",
+            "10L de Agua",
+            "Gomitas",
+            "1 hora con inferiores",
+            "Cargar los materiales",
+            "Solo Fisico",
+            "Safa",
+            "Lava pecheras",
+            "Prepara vestuario",
+            "Peluca",
+            "Pasillo",
+            "Paredón"
+        ];
+
+        let currentMode = 'multa';
+        let activeRuleta = null; // { playerIndex, motivoIndex }
+        let currentResult = null;
+        let activeRuletaOptions = [];
+
+        // --- UTILS ---
+        function parseMoney(str) {
+            const cleanStr = str.toLowerCase().replace(/\s/g, '').replace(/\./g, '');
+            const match = cleanStr.match(/\$(\d+)(k)?/);
+            if (match) {
+                let val = parseInt(match[1]);
+                if (match[2] === 'k') val *= 1000;
+                return val;
+            }
+            return 0;
+        }
+
+        function getCategoryBadgeClass(cat) {
+            switch(cat) {
+                case '3ra': return 'badge-3ra';
+                case 'CT': return 'badge-ct';
+                default: return 'badge-1ra';
+            }
+        }
+
+        // Obtener la categoría de un jugador (busca en todas las listas)
+        function getPlayerCategory(nombre) {
+            const allLists = [...state.deudas, ...state.pendientes, ...state.cobrados];
+            const player = allLists.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+            return player ? (player.categoria || '1ra') : '1ra';
+        }
+
+        function calculateTotals() {
+            let totalDeuda = 0;
+            let totalRecaudado = 0;
+
+            state.deudas.forEach(p => {
+                p.items.forEach(item => totalDeuda += parseMoney(item));
+            });
+
+            state.cobrados.forEach(p => {
+                if (p.raw) totalRecaudado += p.raw;
+                else totalRecaudado += parseMoney(p.monto);
+            });
+
+            document.getElementById('total-deuda').innerText = `$${totalDeuda.toLocaleString('es-AR')}`;
+            document.getElementById('total-recaudado').innerText = `$${totalRecaudado.toLocaleString('es-AR')}`;
+            document.getElementById('count-cobrados').innerText = `${state.cobrados.length} pagos`;
+        }
+
+        function refreshAll() {
+            calculateTotals();
+            renderDeudas();
+            renderPendientes();
+            renderCobrados();
+            
+            const allPlayers = new Set([...state.deudas.map(d => d.nombre), ...state.cobrados.map(c => c.nombre), ...state.pendientes.map(p => p.nombre)]);
+            document.getElementById('players-list').innerHTML = Array.from(allPlayers).sort().map(name => `<option value="${name}">`).join('');
+        }
+
+        // --- UI RENDER ---
+
+        function showTab(tabId) {
+            ['deudas', 'pendientes', 'cobrados'].forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                document.getElementById('btn-' + t).classList.remove('tab-active', 'text-club-green');
+                document.getElementById('btn-' + t).classList.add('text-gray-400');
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            const btn = document.getElementById('btn-' + tabId);
+            btn.classList.add('tab-active', 'text-club-green');
+            btn.classList.remove('text-gray-400');
+        }
+
+        function renderDeudas() {
+            const container = document.getElementById('list-deudas');
+            const searchVal = document.getElementById('search-deudas').value.toLowerCase();
+            
+            const filtered = state.deudas
+                .filter(p => p.nombre.toLowerCase().includes(searchVal))
+                .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            container.innerHTML = filtered.map((p, pIndex) => {
+                let money = 0;
+                p.items.forEach(i => { const val = parseMoney(i); if(val > 0) money += val; });
+                const badgeClass = getCategoryBadgeClass(p.categoria || '1ra');
+
+                return `
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-400 relative">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-lg text-gray-800">${p.nombre}</h3>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass}">${p.categoria || '1ra'}</span>
+                        </div>
+                        ${money > 0 ? `<span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">$${money.toLocaleString()}</span>` : ''}
+                    </div>
+                    <ul class="text-sm space-y-2">
+                        ${p.items.map((item, iIndex) => {
+                            const isMoney = parseMoney(item) > 0;
+                            return `
+                            <li onclick="confirmarCobro('${p.nombre}', ${iIndex})" class="interactive-item flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100 hover:border-green-200">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas ${isMoney ? 'fa-money-bill-wave text-green-600' : 'fa-bolt text-yellow-500'} text-xs w-4"></i>
+                                    <span class="${isMoney ? 'font-semibold text-gray-800' : 'text-gray-700'}">${item}</span>
+                                </div>
+                                <i class="fas fa-arrow-right text-gray-300 text-xs"></i>
+                            </li>`;
+                        }).join('')}
+                    </ul>
+                </div>`;
+            }).join('');
+        }
+
+        function renderPendientes() {
+            const container = document.getElementById('list-pendientes');
+            const sorted = [...state.pendientes].sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            if (sorted.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-gray-400"><i class="fas fa-check-circle text-4xl mb-2 text-green-100"></i><p>Nadie debe tirar la ruleta.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = sorted.map((p, pIdx) => {
+                const badgeClass = getCategoryBadgeClass(p.categoria || '1ra');
+                return `
+                <div class="p-4 group">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold text-sm">
+                            ${p.nombre.charAt(0)}
+                        </div>
+                        <span class="font-bold text-gray-800 text-lg">${p.nombre}</span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${badgeClass}">${p.categoria || '1ra'}</span>
+                    </div>
+                    <div class="pl-11 space-y-2">
+                        ${p.motivos.map((m, mIdx) => `
+                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
+                                <span class="text-xs sm:text-sm text-gray-600 font-medium">${m}</span>
+                                <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold shadow-sm hover:bg-yellow-400 active:scale-95 transition flex items-center gap-1">
+                                    <i class="fas fa-dice"></i> Tirar
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderCobrados() {
+            const container = document.getElementById('list-cobrados');
+            const list = [...state.cobrados].reverse();
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-gray-400"><p>No hay cobros registrados.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="divide-y divide-gray-100">
+                    ${list.map(p => `
+                        <div class="p-4 flex justify-between items-center hover:bg-green-50 transition">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-green-100 p-2 rounded-full text-green-600">
+                                    <i class="fas fa-check text-xs"></i>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-gray-700 block">${p.nombre}</span>
+                                    <span class="text-[10px] text-gray-400 uppercase">${p.categoria || '1ra'}</span>
+                                </div>
+                            </div>
+                            <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 text-sm">
+                                ${p.monto}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // --- ACTIONS: COBRAR ---
+        function confirmarCobro(nombre, itemIndex) {
+            const pIndex = state.deudas.findIndex(d => d.nombre === nombre);
+            if(pIndex === -1) return;
+            
+            const item = state.deudas[pIndex].items[itemIndex];
+            const categoria = state.deudas[pIndex].categoria || '1ra';
+
+            if(confirm(`¿Confirmas que ${nombre} pagó "${item}"?\n\nSe moverá a la lista de Cobrados.`)) {
+                state.deudas[pIndex].items.splice(itemIndex, 1);
+                
+                if(state.deudas[pIndex].items.length === 0) {
+                    state.deudas.splice(pIndex, 1);
+                }
+
+                state.cobrados.push({
+                    nombre: nombre,
+                    categoria: categoria,
+                    monto: item,
+                    raw: parseMoney(item)
+                });
+
+                saveState(); // Guardar cambios
+                refreshAll();
+            }
+        }
+
+        // --- RULETA LOGIC ---
+        function getOpcionesPorCategoria(categoria) {
+            let opciones = [...ruletaBase]; // Copia base
+
+            if (categoria === '3ra') {
+                // Modificar Dinero: $10.000 -> $5.000
+                opciones = opciones.map(op => op === "$10.000" ? "$5.000" : op);
+                // Modificar Agua: 10L -> 5L
+                opciones = opciones.map(op => op === "10L de Agua" ? "5L de Agua" : op);
+            } else if (categoria === 'CT') {
+                // Eliminar "Solo Fisico"
+                opciones = opciones.filter(op => op !== "Solo Fisico");
+            }
+            // 1ra se queda con la base
+            return opciones;
+        }
+
+        function abrirRuleta(nombre, motivo) {
+            activeRuleta = { nombre, motivo };
+            currentResult = null;
+            
+            // Determinar categoría (buscar en pendientes primero)
+            const pendiente = state.pendientes.find(p => p.nombre === nombre);
+            const categoria = pendiente ? (pendiente.categoria || '1ra') : '1ra';
+            
+            // Cargar opciones adaptadas
+            activeRuletaOptions = getOpcionesPorCategoria(categoria);
+            
+            // UI
+            document.getElementById('ruleta-player').innerText = nombre;
+            document.getElementById('ruleta-motivo').innerText = motivo;
+            
+            const badge = document.getElementById('ruleta-cat-badge');
+            badge.innerText = categoria;
+            badge.className = `text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(categoria)}`;
+
+            document.getElementById('ruleta-display').innerText = "¿Listo?";
+            document.getElementById('ruleta-display').className = "text-2xl font-black text-gray-400 uppercase leading-tight";
+            document.getElementById('btn-girar').classList.remove('hidden');
+            document.getElementById('ruleta-actions').classList.add('hidden');
+            
+            document.getElementById('ruleta-modal').classList.remove('hidden');
+        }
+
+        function girarRuleta() {
+            const display = document.getElementById('ruleta-display');
+            const btn = document.getElementById('btn-girar');
+            
+            btn.classList.add('hidden');
+            display.className = "text-3xl font-black text-gray-800 uppercase leading-tight ruleta-anim";
+            
+            let speed = 50;
+            let counter = 0;
+            
+            const run = () => {
+                // Usamos las opciones adaptadas a la categoría
+                const randomOpt = activeRuletaOptions[Math.floor(Math.random() * activeRuletaOptions.length)];
+                display.innerText = randomOpt;
+                
+                if(counter < 20) {
+                    counter++;
+                    setTimeout(run, speed);
+                } else if(counter < 30) {
+                    counter++;
+                    speed += 20; 
+                    setTimeout(run, speed);
+                } else {
+                    currentResult = randomOpt;
+                    display.className = "text-3xl font-black text-club-green uppercase leading-tight transform scale-110 transition-transform duration-300";
+                    document.getElementById('ruleta-actions').classList.remove('hidden');
+                    document.getElementById('ruleta-actions').className = "grid grid-cols-2 gap-3 animate-fade-in";
+                }
+            };
+            run();
+        }
+
+        function closeRuletaModal() {
+            document.getElementById('ruleta-modal').classList.add('hidden');
+            activeRuleta = null;
+        }
+
+        function confirmarRuleta() {
+            if(!currentResult) return;
+
+            const { nombre, motivo } = activeRuleta;
+
+            // 1. Quitar de Pendientes
+            const pIdx = state.pendientes.findIndex(p => p.nombre === nombre);
+            let categoriaJugador = '1ra';
+            
+            if(pIdx !== -1) {
+                categoriaJugador = state.pendientes[pIdx].categoria || '1ra';
+                const mIdx = state.pendientes[pIdx].motivos.indexOf(motivo);
+                if (mIdx > -1) {
+                    state.pendientes[pIdx].motivos.splice(mIdx, 1);
+                }
+                if(state.pendientes[pIdx].motivos.length === 0) {
+                    state.pendientes.splice(pIdx, 1);
+                }
+            }
+
+            // 2. Agregar a Deudas
+            const dIdx = state.deudas.findIndex(d => d.nombre === nombre);
+            if(dIdx !== -1) {
+                state.deudas[dIdx].items.push(currentResult);
+                // Actualizar categoria por si cambió
+                state.deudas[dIdx].categoria = categoriaJugador; 
+            } else {
+                state.deudas.push({ nombre: nombre, categoria: categoriaJugador, items: [currentResult] });
+            }
+
+            saveState(); // Guardar cambios
+            closeRuletaModal();
+            refreshAll();
+            showTab('deudas');
+        }
+
+        // --- ADMIN ---
+        function toggleAdmin() {
+            const modal = document.getElementById('admin-modal');
+            modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) {
+                document.getElementById('input-jugador').focus();
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const btnMulta = document.getElementById('mode-multa');
+            const btnPago = document.getElementById('mode-pago');
+            const labelC = document.getElementById('label-concepto');
+            const catSelect = document.getElementById('input-categoria');
+
+            if (mode === 'multa') {
+                btnMulta.className = "p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-bold text-sm ring-2 ring-red-500 shadow-sm transition-all";
+                btnPago.className = "p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-sm shadow-sm hover:bg-gray-50 transition-all";
+                labelC.innerText = "Concepto / Multa";
+                catSelect.disabled = false;
+            } else {
+                btnMulta.className = "p-3 rounded-lg border border-gray-200 text-gray-500 font-bold text-sm shadow-sm hover:bg-gray-50 transition-all";
+                btnPago.className = "p-3 rounded-lg border border-green-200 bg-green-50 text-green-700 font-bold text-sm ring-2 ring-green-500 shadow-sm transition-all";
+                labelC.innerText = "Monto Pagado ($)";
+                // Al pagar, la categoría es informativa, se intenta preservar la del jugador
+                catSelect.disabled = true;
+            }
+        }
+
+        // Detectar si el jugador ya existe al escribir y autoseleccionar categoría
+        document.getElementById('input-jugador').addEventListener('input', function(e) {
+            const val = e.target.value;
+            const cat = getPlayerCategory(val);
+            document.getElementById('input-categoria').value = cat;
+        });
+
+        function guardarEntradaManual() {
+            const nombreRaw = document.getElementById('input-jugador').value.trim();
+            const concepto = document.getElementById('input-concepto').value.trim();
+            const categoria = document.getElementById('input-categoria').value;
+
+            if (!nombreRaw || !concepto) {
+                alert("Completa los datos.");
+                return;
+            }
+
+            const nombre = nombreRaw.charAt(0).toUpperCase() + nombreRaw.slice(1);
+
+            if (currentMode === 'multa') {
+                const idx = state.deudas.findIndex(d => d.nombre.toLowerCase() === nombre.toLowerCase());
+                if (idx >= 0) {
+                    state.deudas[idx].items.push(concepto);
+                    state.deudas[idx].categoria = categoria; // Actualizar categoría si cambia
+                } else {
+                    state.deudas.push({ nombre: nombre, categoria: categoria, items: [concepto] });
+                }
+                showTab('deudas');
+            } else {
+                state.cobrados.push({ 
+                    nombre: nombre, 
+                    categoria: categoria,
+                    monto: concepto.includes('$') || parseMoney(concepto) > 0 ? concepto : concepto,
+                    raw: parseMoney(concepto) || 0
+                });
+                showTab('cobrados');
+            }
+
+            saveState(); // Guardar cambios
+            document.getElementById('input-jugador').value = '';
+            document.getElementById('input-concepto').value = '';
+            toggleAdmin();
+            refreshAll();
+        }
+
+        window.onload = refreshAll;
+        
+        document.addEventListener('keydown', (e) => {
+            if(e.key === "Escape") {
+                document.getElementById('admin-modal').classList.add('hidden');
+                document.getElementById('ruleta-modal').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
