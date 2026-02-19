@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
-    <!-- FIREBASE SDK (Compat version para usar directo en HTML) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- FIREBASE SDK 10.8.0 (Versión Compat más estable) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
@@ -74,9 +74,13 @@
 
         /* Loading Overlay */
         #loading-screen {
-            position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 100;
+            position: fixed; inset: 0; background: rgba(255,255,255,0.98); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 20px;
+        }
+        #debug-log {
+            font-family: monospace; font-size: 10px; color: #999; 
+            margin-top: 20px; max-width: 300px; word-wrap: break-word;
         }
     </style>
 </head>
@@ -86,16 +90,18 @@
     <div id="loading-screen">
         <div id="loading-content">
             <i class="fas fa-circle-notch fa-spin text-4xl text-club-green mb-4"></i>
-            <p class="text-gray-600 font-bold mb-2">Conectando al Club...</p>
-            <p class="text-xs text-gray-400">Si tarda mucho, verifica tu conexión.</p>
+            <p class="text-gray-800 font-bold text-lg mb-2">Cargando Club...</p>
+            <p class="text-sm text-gray-500" id="loading-status">Iniciando...</p>
         </div>
-        <div id="loading-error" class="hidden">
-            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
-            <p class="text-gray-800 font-bold mb-2" id="error-msg">Error de Conexión</p>
-            <button onclick="forceEnter()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold shadow-sm hover:bg-gray-300">
-                Entrar en Modo Local
+        
+        <div id="loading-actions" class="hidden mt-6 flex flex-col gap-3">
+            <button onclick="forceOfflineMode()" class="bg-gray-800 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-gray-700 w-full">
+                Entrar Modo Offline
             </button>
+            <p class="text-xs text-red-500 font-bold mt-2" id="error-display"></p>
         </div>
+
+        <div id="debug-log"></div>
     </div>
 
     <!-- Header -->
@@ -108,7 +114,10 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold uppercase tracking-wide text-club-yellow leading-tight">Libertadores</h1>
-                    <p class="text-xs text-white/80">San Cristóbal</p>
+                    <div class="flex items-center gap-1">
+                        <p class="text-xs text-white/80">San Cristóbal</p>
+                        <span id="connection-status" class="w-2 h-2 rounded-full bg-red-500" title="Estado Conexión"></span>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2">
@@ -122,7 +131,10 @@
         </div>
         <!-- Edit Mode Banner -->
         <div id="edit-banner" class="hidden bg-orange-500 text-white text-xs font-bold text-center py-1">
-            MODO EDICIÓN ACTIVADO: Toca categorías para cambiarlas o la papelera para borrar.
+            MODO EDICIÓN: Tocá para cambiar categoría o borrar.
+        </div>
+        <div id="offline-banner" class="hidden bg-gray-800 text-white text-xs font-bold text-center py-1">
+            MODO OFFLINE: Cambios no guardados en nube.
         </div>
     </header>
 
@@ -278,7 +290,7 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURACIÓN FIREBASE (LLENAR ESTO) ---
+        // --- 1. CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
           apiKey: "AIzaSyBdYvEPLmHKJGadBsN1MGNsoSn-Py9UJw8",
           authDomain: "multas-lsc.firebaseapp.com",
@@ -293,15 +305,12 @@
         let db;
         let isOnline = false;
 
-        // Datos por defecto si la BD está vacía
+        // Datos locales por defecto
         let state = {
             deudas: [
-                // CT
                 { nombre: "Ali", categoria: "CT", items: ["$10k"] },
                 { nombre: "Edu", categoria: "CT", items: ["20L agua", "$20k", "peluca", "cargar materiales"] },
                 { nombre: "Nico", categoria: "CT", items: ["Pasillo"] },
-                
-                // 3ra
                 { nombre: "Aguinaco", categoria: "3ra", items: ["preparar vestuario", "Gomitas", "1 hora con inferiores"] },
                 { nombre: "Diaz", categoria: "3ra", items: ["Pasillo", "paredon"] },
                 { nombre: "Ferreyra", categoria: "3ra", items: ["10L agua", "Gomitas", "Gomitas", "Gomitas"] },
@@ -310,8 +319,6 @@
                 { nombre: "Reyes", categoria: "3ra", items: ["$5k"] },
                 { nombre: "Tomasetig", categoria: "3ra", items: ["preparar vestuario"] },
                 { nombre: "Zeballos", categoria: "3ra", items: ["Prepara Vestuario", "Solo Fisico"] },
-
-                // 1ra
                 { nombre: "Almiron", categoria: "1ra", items: ["$20k", "Pasillo"] },
                 { nombre: "Arzani", categoria: "1ra", items: ["Peluca"] },
                 { nombre: "Benquet", categoria: "1ra", items: ["1 hora con inferiores", "carga materiales", "carga materiales"] },
@@ -338,79 +345,110 @@
             ]
         };
 
-        const DOC_ID = 'estado_club'; // Nombre del documento en la nube
-        const COLL_ID = 'multas_lsc'; // Nombre de la colección
+        const DOC_ID = 'estado_club';
+        const COLL_ID = 'multas_lsc';
 
-        function forceEnter() {
+        function logDebug(msg) {
+            console.log(msg);
+            const d = document.getElementById('debug-log');
+            if(d) d.innerText += `> ${msg}\n`;
+            document.getElementById('loading-status').innerText = msg;
+        }
+
+        function forceOfflineMode() {
+            logDebug("Entrando offline...");
             document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('offline-banner').classList.remove('hidden');
+            document.getElementById('connection-status').className = "w-2 h-2 rounded-full bg-gray-500";
+            isOnline = false;
+            refreshAll();
         }
 
         function initFirebase() {
-            if (!firebaseConfig.apiKey) {
-                document.getElementById('loading-content').classList.add('hidden');
-                document.getElementById('loading-error').classList.remove('hidden');
-                document.getElementById('error-msg').innerText = "Falta Configuración";
-                return;
-            }
-
-            // Timeout de seguridad: Si en 5 segundos no conecta, forzamos opción de entrar
+            logDebug("Iniciando...");
+            
+            // Timeout de seguridad
             setTimeout(() => {
-                const loader = document.getElementById('loading-screen');
-                if (!loader.classList.contains('hidden')) {
-                    document.getElementById('loading-content').innerHTML += 
-                        `<br><button onclick="forceEnter()" class="mt-4 bg-gray-200 text-gray-800 px-4 py-2 rounded font-bold shadow-sm hover:bg-gray-300">Entrar de todas formas</button>`;
+                if (!document.getElementById('loading-screen').classList.contains('hidden')) {
+                    document.getElementById('loading-actions').classList.remove('hidden');
+                    document.getElementById('loading-status').innerText = "Esperando conexión...";
                 }
-            }, 5000);
+            }, 3000);
 
             try {
-                firebase.initializeApp(firebaseConfig);
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
                 db = firebase.firestore();
+                
+                // Habilitar persistencia offline (CRÍTICO para mal internet)
+                db.enablePersistence()
+                    .catch((err) => {
+                        if (err.code == 'failed-precondition') {
+                            logDebug("Persistencia: múltiples pestañas abiertas");
+                        } else if (err.code == 'unimplemented') {
+                            logDebug("Persistencia: no soportado");
+                        }
+                    });
+
+                logDebug("Conectando DB...");
                 listenToUpdates();
             } catch (e) {
-                console.error("Error Firebase", e);
-                document.getElementById('loading-content').classList.add('hidden');
-                document.getElementById('loading-error').classList.remove('hidden');
-                document.getElementById('error-msg').innerText = "Error SDK: " + e.message;
+                console.error("Error init", e);
+                logDebug("Error: " + e.message);
+                document.getElementById('loading-actions').classList.remove('hidden');
+                document.getElementById('error-display').innerText = e.message;
             }
         }
 
-        // --- 3. SINCRONIZACIÓN (MAGIA) ---
-        
-        // Escuchar cambios en tiempo real
         function listenToUpdates() {
-            db.collection(COLL_ID).doc(DOC_ID).onSnapshot((doc) => {
+            db.collection(COLL_ID).doc(DOC_ID).onSnapshot({
+                includeMetadataChanges: true 
+            }, (doc) => {
                 const loading = document.getElementById('loading-screen');
+                
                 if (doc.exists) {
+                    logDebug("Datos ok");
                     state = doc.data();
                 } else {
-                    // Si no existe (primera vez), lo creamos con vacío
+                    logDebug("Creando base...");
                     saveState();
                 }
-                loading.classList.add('hidden'); // Ocultar carga cuando llegan datos
+
+                // Check conexión real
+                const source = doc.metadata.fromCache ? "local" : "server";
+                const color = source === "server" ? "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.8)]" : "bg-yellow-500";
+                document.getElementById('connection-status').className = `w-2 h-2 rounded-full ${color}`;
+                
+                loading.classList.add('hidden');
+                isOnline = true;
                 refreshAll();
             }, (error) => {
-                console.error("Error recibiendo datos:", error);
-                
-                document.getElementById('loading-content').classList.add('hidden');
-                document.getElementById('loading-error').classList.remove('hidden');
+                console.error("Snapshot error:", error);
+                logDebug("Error conexión: " + error.code);
                 
                 if (error.code === 'permission-denied') {
-                    document.getElementById('error-msg').innerText = "Permisos Denegados: Revisa las Reglas en Firebase (Modo Prueba).";
+                     // Auto-offline si falla permiso
+                     document.getElementById('error-display').innerText = "Permisos denegados (Revisar consola Firebase)";
+                     setTimeout(forceOfflineMode, 1500);
                 } else {
-                    document.getElementById('error-msg').innerText = "Sin Conexión";
+                    document.getElementById('loading-actions').classList.remove('hidden');
                 }
             });
         }
 
-        // Guardar cambios en la nube
         function saveState() {
-            if(!db) return;
-            // Guardamos todo el objeto state en el documento
+            if(!db || !isOnline) {
+                console.warn("Offline: no se guarda en nube");
+                return;
+            }
             db.collection(COLL_ID).doc(DOC_ID).set(state)
-                .then(() => console.log("Guardado en nube"))
-                .catch((e) => alert("Error guardando: " + e.message));
+                .then(() => console.log("Guardado nube"))
+                .catch((e) => console.error("Error save", e));
         }
 
+        // --- LÓGICA DE NEGOCIO ---
         const ruletaBase = [
             "$10.000",
             "5kg de Frutas",
@@ -427,15 +465,15 @@
             "Paredón"
         ];
 
-        let currentMode = 'multa';
         let activeRuleta = null; 
         let currentResult = null;
         let activeRuletaOptions = [];
         let isEditMode = false;
+        let currentMode = 'multa';
 
-        // --- UTILS ---
         function parseMoney(str) {
-            const cleanStr = str.toLowerCase().replace(/\s/g, '').replace(/\./g, '');
+            if(!str) return 0;
+            const cleanStr = str.toString().toLowerCase().replace(/\s/g, '').replace(/\./g, '');
             const match = cleanStr.match(/\$(\d+)(k)?/);
             if (match) {
                 let val = parseInt(match[1]);
@@ -453,9 +491,9 @@
             }
         }
 
-        // Obtener la categoría de un jugador (busca en todas las listas)
         function getPlayerCategory(nombre) {
-            const allLists = [...state.deudas, ...state.pendientes, ...state.cobrados];
+            if(!state.deudas) return '1ra';
+            const allLists = [...(state.deudas||[]), ...(state.pendientes||[]), ...(state.cobrados||[])];
             const player = allLists.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
             return player ? (player.categoria || '1ra') : '1ra';
         }
@@ -464,18 +502,22 @@
             let totalDeuda = 0;
             let totalRecaudado = 0;
 
-            state.deudas.forEach(p => {
-                p.items.forEach(item => totalDeuda += parseMoney(item));
-            });
+            if(state.deudas) {
+                state.deudas.forEach(p => {
+                    if(p.items) p.items.forEach(item => totalDeuda += parseMoney(item));
+                });
+            }
 
-            state.cobrados.forEach(p => {
-                if (p.raw) totalRecaudado += p.raw;
-                else totalRecaudado += parseMoney(p.monto);
-            });
+            if(state.cobrados) {
+                state.cobrados.forEach(p => {
+                    if (p.raw) totalRecaudado += p.raw;
+                    else totalRecaudado += parseMoney(p.monto);
+                });
+            }
 
             document.getElementById('total-deuda').innerText = `$${totalDeuda.toLocaleString('es-AR')}`;
             document.getElementById('total-recaudado').innerText = `$${totalRecaudado.toLocaleString('es-AR')}`;
-            document.getElementById('count-cobrados').innerText = `${state.cobrados.length} pagos`;
+            document.getElementById('count-cobrados').innerText = `${state.cobrados ? state.cobrados.length : 0} pagos`;
         }
 
         function refreshAll() {
@@ -484,11 +526,13 @@
             renderPendientes();
             renderCobrados();
             
-            const allPlayers = new Set([...state.deudas.map(d => d.nombre), ...state.cobrados.map(c => c.nombre), ...state.pendientes.map(p => p.nombre)]);
+            const allPlayers = new Set([
+                ...(state.deudas || []).map(d => d.nombre), 
+                ...(state.cobrados || []).map(c => c.nombre), 
+                ...(state.pendientes || []).map(p => p.nombre)
+            ]);
             document.getElementById('players-list').innerHTML = Array.from(allPlayers).sort().map(name => `<option value="${name}">`).join('');
         }
-
-        // --- UI RENDER ---
 
         function toggleEditMode() {
             isEditMode = !isEditMode;
@@ -523,6 +567,8 @@
             const container = document.getElementById('list-deudas');
             const searchVal = document.getElementById('search-deudas').value.toLowerCase();
             
+            if(!state.deudas) { container.innerHTML = ""; return; }
+
             const filtered = state.deudas
                 .filter(p => p.nombre.toLowerCase().includes(searchVal))
                 .sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -566,6 +612,8 @@
 
         function renderPendientes() {
             const container = document.getElementById('list-pendientes');
+            if(!state.pendientes) { container.innerHTML = ""; return; }
+            
             const sorted = [...state.pendientes].sort((a, b) => a.nombre.localeCompare(b.nombre));
 
             if (sorted.length === 0) {
@@ -605,7 +653,8 @@
 
         function renderCobrados() {
             const container = document.getElementById('list-cobrados');
-            // Mapeamos el índice original antes de revertir
+            if(!state.cobrados) { container.innerHTML = ""; return; }
+
             const list = state.cobrados.map((item, index) => ({...item, originalIndex: index})).reverse();
 
             if (list.length === 0) {
@@ -641,7 +690,7 @@
             `;
         }
 
-        // --- ACTIONS: EDIT / DELETE ---
+        // --- ACTIONS ---
 
         function deleteDeudaItem(nombre, iIdx) {
             if(!confirm("¿Borrar esta multa?")) return;
@@ -649,10 +698,8 @@
             if (pIdx === -1) return;
 
             state.deudas[pIdx].items.splice(iIdx, 1);
-            if(state.deudas[pIdx].items.length === 0) {
-                // state.deudas.splice(pIdx, 1); // Descomentar si querés borrar al jugador al quedarse sin deudas
-            }
             saveState();
+            refreshAll();
         }
 
         function deletePlayer(nombre) {
@@ -661,6 +708,7 @@
             if (pIdx > -1) {
                 state.deudas.splice(pIdx, 1);
                 saveState();
+                refreshAll();
             }
         }
 
@@ -674,43 +722,36 @@
                 state.pendientes.splice(pIdx, 1);
             }
             saveState();
+            refreshAll();
         }
 
         function deleteCobrado(index) {
             if(!confirm("¿Borrar este registro de cobro?")) return;
             state.cobrados.splice(index, 1);
             saveState();
+            refreshAll();
         }
 
         function cycleCategory(playerName) {
             if (!isEditMode) return;
             
-            // Ciclo: 1ra -> 3ra -> CT -> 1ra
-            const nextCat = {
-                '1ra': '3ra',
-                '3ra': 'CT',
-                'CT': '1ra'
-            };
-
-            // Buscar categoría actual (primer match)
+            const nextCat = { '1ra': '3ra', '3ra': 'CT', 'CT': '1ra' };
             const current = getPlayerCategory(playerName);
             const next = nextCat[current] || '1ra';
-
-            // Actualizar en TODAS las listas
             let updated = false;
             
-            state.deudas.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
-            state.pendientes.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
-            state.cobrados.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
+            if(state.deudas) state.deudas.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
+            if(state.pendientes) state.pendientes.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
+            if(state.cobrados) state.cobrados.forEach(p => { if(p.nombre === playerName) { p.categoria = next; updated = true; }});
 
             if (updated) {
                 saveState();
+                refreshAll();
             }
         }
 
-        // --- ACTIONS: COBRAR ---
         function confirmarCobro(nombre, itemIndex) {
-            if (isEditMode) return; // No cobrar en modo edición
+            if (isEditMode) return; 
 
             const pIndex = state.deudas.findIndex(d => d.nombre === nombre);
             if(pIndex === -1) return;
@@ -720,11 +761,9 @@
 
             if(confirm(`¿Confirmas que ${nombre} pagó "${item}"?\n\nSe moverá a la lista de Cobrados.`)) {
                 state.deudas[pIndex].items.splice(itemIndex, 1);
-                
-                if(state.deudas[pIndex].items.length === 0) {
-                    state.deudas.splice(pIndex, 1);
-                }
+                if(state.deudas[pIndex].items.length === 0) state.deudas.splice(pIndex, 1);
 
+                if(!state.cobrados) state.cobrados = [];
                 state.cobrados.push({
                     nombre: nombre,
                     categoria: categoria,
@@ -732,24 +771,20 @@
                     raw: parseMoney(item)
                 });
 
-                saveState(); // Guardar cambios
+                saveState(); 
+                refreshAll();
             }
         }
 
         // --- RULETA LOGIC ---
         function getOpcionesPorCategoria(categoria) {
-            let opciones = [...ruletaBase]; // Copia base
-
+            let opciones = [...ruletaBase]; 
             if (categoria === '3ra') {
-                // Modificar Dinero: $10.000 -> $5.000
                 opciones = opciones.map(op => op === "$10.000" ? "$5.000" : op);
-                // Modificar Agua: 10L -> 5L
                 opciones = opciones.map(op => op === "10L de Agua" ? "5L de Agua" : op);
             } else if (categoria === 'CT') {
-                // Eliminar "Solo Fisico"
                 opciones = opciones.filter(op => op !== "Solo Fisico");
             }
-            // 1ra se queda con la base
             return opciones;
         }
 
@@ -759,14 +794,11 @@
             activeRuleta = { nombre, motivo };
             currentResult = null;
             
-            // Determinar categoría (buscar en pendientes primero)
             const pendiente = state.pendientes.find(p => p.nombre === nombre);
             const categoria = pendiente ? (pendiente.categoria || '1ra') : '1ra';
             
-            // Cargar opciones adaptadas
             activeRuletaOptions = getOpcionesPorCategoria(categoria);
             
-            // UI
             document.getElementById('ruleta-player').innerText = nombre;
             document.getElementById('ruleta-motivo').innerText = motivo;
             
@@ -793,7 +825,6 @@
             let counter = 0;
             
             const run = () => {
-                // Usamos las opciones adaptadas a la categoría
                 const randomOpt = activeRuletaOptions[Math.floor(Math.random() * activeRuletaOptions.length)];
                 display.innerText = randomOpt;
                 
@@ -808,7 +839,6 @@
                     currentResult = randomOpt;
                     display.className = "text-3xl font-black text-club-green uppercase leading-tight transform scale-110 transition-transform duration-300";
                     document.getElementById('ruleta-actions').classList.remove('hidden');
-                    document.getElementById('ruleta-actions').classList.remove('hidden'); // Fixed: Show actions
                     document.getElementById('ruleta-actions').className = "grid grid-cols-2 gap-3 animate-fade-in";
                 }
             };
@@ -825,7 +855,6 @@
 
             const { nombre, motivo } = activeRuleta;
 
-            // 1. Quitar de Pendientes
             const pIdx = state.pendientes.findIndex(p => p.nombre === nombre);
             let categoriaJugador = '1ra';
             
@@ -840,18 +869,18 @@
                 }
             }
 
-            // 2. Agregar a Deudas
             const dIdx = state.deudas.findIndex(d => d.nombre === nombre);
             if(dIdx !== -1) {
                 state.deudas[dIdx].items.push(currentResult);
-                // Actualizar categoria por si cambió
                 state.deudas[dIdx].categoria = categoriaJugador; 
             } else {
                 state.deudas.push({ nombre: nombre, categoria: categoriaJugador, items: [currentResult] });
             }
 
-            saveState(); // Guardar cambios
+            saveState();
             closeRuletaModal();
+            refreshAll();
+            showTab('deudas');
         }
 
         // --- ADMIN ---
@@ -871,7 +900,6 @@
             const labelC = document.getElementById('label-concepto');
             const catSelect = document.getElementById('input-categoria');
 
-            // Reset classes
             const baseClass = "p-3 rounded-lg border font-bold text-xs sm:text-sm shadow-sm transition-all";
             btnMulta.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
             btnRuleta.className = baseClass + " border-gray-200 text-gray-500 hover:bg-gray-50";
@@ -892,7 +920,6 @@
             }
         }
 
-        // Detectar si el jugador ya existe al escribir y autoseleccionar categoría
         document.getElementById('input-jugador').addEventListener('input', function(e) {
             const val = e.target.value;
             const cat = getPlayerCategory(val);
@@ -930,6 +957,7 @@
                 }
                 showTab('pendientes');
             } else {
+                if(!state.cobrados) state.cobrados = [];
                 state.cobrados.push({ 
                     nombre: nombre, 
                     categoria: categoria,
@@ -939,10 +967,11 @@
                 showTab('cobrados');
             }
 
-            saveState(); // Guardar cambios
+            saveState(); 
             document.getElementById('input-jugador').value = '';
             document.getElementById('input-concepto').value = '';
             toggleAdmin();
+            refreshAll();
         }
 
         window.onload = initFirebase;
