@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
-    <!-- FIREBASE SDK 10.8.0 (Versión Compat más estable) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -86,7 +85,6 @@
 
     <div id="status-toast">Conectando...</div>
 
-    <!-- Header -->
     <header class="bg-club-green text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -109,24 +107,19 @@
                 <button onclick="toggleAdmin()" class="bg-club-yellow text-club-green px-3 py-2 rounded font-bold text-xs shadow hover:bg-yellow-400 transition flex items-center gap-1 active:scale-95">
                     <i class="fas fa-plus"></i> <span class="hidden sm:inline">Nueva</span>
                 </button>
-                <button onclick="exportarDeudas()" 
-    class="bg-white/10 text-white px-3 py-2 rounded font-bold text-xs shadow hover:bg-white/20 transition flex items-center gap-1">
-    <i class="fas fa-file-csv"></i>
-</button>
-
-<button onclick="exportarDeudasPDF()" 
-    class="bg-white/10 text-white px-3 py-2 rounded font-bold text-xs shadow hover:bg-white/20 transition flex items-center gap-1">
-    <i class="fas fa-file-pdf"></i>
-</button>
+                <button onclick="exportarDeudas()" class="bg-white/10 text-white px-3 py-2 rounded font-bold text-xs shadow hover:bg-white/20 transition flex items-center gap-1">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button onclick="exportarDeudasPDF()" class="bg-white/10 text-white px-3 py-2 rounded font-bold text-xs shadow hover:bg-white/20 transition flex items-center gap-1">
+                    <i class="fas fa-file-pdf"></i>
+                </button>
             </div>
         </div>
-        <!-- Edit Mode Banner -->
         <div id="edit-banner" class="hidden bg-orange-500 text-white text-xs font-bold text-center py-1">
             MODO EDICIÓN: Tocá para cambiar categoría o borrar.
         </div>
     </header>
 
-    <!-- Resumen -->
     <div class="bg-white border-b border-gray-200 shadow-sm">
         <div class="container mx-auto px-4 py-4 grid grid-cols-2 gap-4">
             <div class="bg-red-50 p-3 rounded-lg border border-red-100 flex flex-col justify-center">
@@ -140,7 +133,6 @@
         </div>
     </div>
 
-    <!-- Navegación -->
     <nav class="bg-white shadow-sm sticky top-[72px] z-40">
         <div class="container mx-auto flex justify-around text-center border-b border-gray-100">
             <button onclick="showTab('deudas')" id="btn-deudas" class="py-3 px-2 text-xs sm:text-sm uppercase font-bold flex-1 tab-active transition-colors flex flex-col items-center justify-center gap-1">
@@ -155,7 +147,6 @@
         </div>
     </nav>
 
-    <!-- Main -->
     <main class="container mx-auto p-4 max-w-4xl min-h-[50vh]">
         <section id="tab-deudas" class="space-y-4 animate-fade-in">
             <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2 rounded-r hide-on-edit">
@@ -185,7 +176,6 @@
         </section>
     </main>
 
-    <!-- Modal Admin -->
     <div id="admin-modal" class="fixed inset-0 bg-black/60 z-[60] hidden flex items-end sm:items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
             <div class="bg-club-green p-4 flex justify-between items-center">
@@ -206,6 +196,13 @@
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jugador</label>
                         <input type="text" id="input-jugador" list="players-list" class="w-full p-3 border border-gray-300 rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none text-base" placeholder="Nombre">
                         <datalist id="players-list"></datalist>
+
+                        <div class="grid grid-cols-2 gap-3 mt-2">
+                            <input type="text" id="input-nombre" placeholder="Nombre" class="p-3 border rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none">
+                            <input type="text" id="input-apellido" placeholder="Apellido" class="p-3 border rounded-lg focus:border-club-green focus:ring-1 focus:ring-club-green outline-none">
+                        </div>
+                        <input type="text" id="input-telefono" placeholder="54911..." class="w-full p-3 border rounded-lg mt-2 focus:border-club-green focus:ring-1 focus:ring-club-green outline-none">
+
                     </div>
                     <div class="col-span-1">
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Categoría</label>
@@ -227,7 +224,6 @@
         </div>
     </div>
 
-    <!-- Modal Ruleta -->
     <div id="ruleta-modal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-fade-in text-center relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-600 via-yellow-400 to-green-600"></div>
@@ -255,84 +251,93 @@
     </div>
 
     <script>
-async function exportarDeudasPDF() {
-    if (!state.deudas || state.deudas.length === 0) {
-        alert("No hay deudas para exportar.");
-        return;
-    }
+        function getNombreCompleto(p) {
+            if (p.apellido && p.nombre) return `${p.apellido} ${p.nombre}`;
+            return p.nombre || '';
+        }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Cargar imagen del escudo
-    const img = new Image();
-    img.src = "EscudoLiber.png";
-
-    img.onload = function () {
-
-        // --- Procesar datos ---
-        const data = state.deudas.map(p => {
+        function getMensajeDeuda(p) {
             let total = 0;
-            const items = p.items.map(i => {
+
+            const detalle = (p.items || []).map(i => {
                 const val = parseMoney(i);
                 total += val;
-                return { concepto: i, monto: val };
-            });
+                return `- ${i}`;
+            }).join('%0A');
 
-            return {
-                nombre: p.nombre,
-                categoria: p.categoria || '1ra',
-                total,
-                items
-            };
-        });
+            return `Hola ${p.nombre || ''}, tenés las siguientes multas:%0A${detalle}%0A%0ATotal: $${total}`;
+        }
 
-        data.sort((a, b) => b.total - a.total);
+        async function exportarDeudasPDF() {
+            if (!state.deudas || state.deudas.length === 0) {
+                alert("No hay deudas para exportar.");
+                return;
+            }
 
-        // --- Header ---
-        doc.addImage(img, "PNG", 10, 10, 20, 20);
-        doc.setFontSize(16);
-        doc.text("Multas - Libertadores SC", 35, 18);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-        doc.setFontSize(10);
-        doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 35, 24);
+            const img = new Image();
+            img.src = "EscudoLiber.png";
 
-        let y = 40;
+            img.onload = function () {
+                const data = state.deudas.map(p => {
+                    let total = 0;
+                    const items = p.items.map(i => {
+                        const val = parseMoney(i);
+                        total += val;
+                        return { concepto: i, monto: val };
+                    });
 
-        // --- Contenido ---
-        data.forEach(p => {
+                    return {
+                        nombre: p.nombre,
+                        categoria: p.categoria || '1ra',
+                        total,
+                        items
+                    };
+                });
 
-            doc.setFontSize(12);
-            doc.setFont(undefined, "bold");
-            doc.text(`${p.nombre} (${p.categoria})`, 10, y);
+                data.sort((a, b) => b.total - a.total);
 
-            doc.setFont(undefined, "normal");
-            doc.text(`Total: $${p.total.toLocaleString('es-AR')}`, 140, y);
+                doc.addImage(img, "PNG", 10, 10, 20, 20);
+                doc.setFontSize(16);
+                doc.text("Multas - Libertadores SC", 35, 18);
 
-            y += 6;
-
-            // items ordenados
-            p.items.sort((a, b) => b.monto - a.monto);
-
-            p.items.forEach(item => {
                 doc.setFontSize(10);
-                doc.text(`- ${item.concepto}`, 12, y);
-                doc.text(`$${item.monto.toLocaleString('es-AR')}`, 160, y, { align: "right" });
-                y += 5;
+                doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 35, 24);
 
-                // salto de página
-                if (y > 280) {
-                    doc.addPage();
-                    y = 20;
-                }
-            });
+                let y = 40;
 
-            y += 5;
-        });
+                data.forEach(p => {
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, "bold");
+                    doc.text(`${getNombreCompleto(p)} (${p.categoria})`, 10, y);
 
-        doc.save("deudas_lsc.pdf");
-    };
-}
+                    doc.setFont(undefined, "normal");
+                    doc.text(`Total: $${p.total.toLocaleString('es-AR')}`, 140, y);
+
+                    y += 6;
+
+                    p.items.sort((a, b) => b.monto - a.monto);
+
+                    p.items.forEach(item => {
+                        doc.setFontSize(10);
+                        doc.text(`- ${item.concepto}`, 12, y);
+                        doc.text(`$${item.monto.toLocaleString('es-AR')}`, 160, y, { align: "right" });
+                        y += 5;
+
+                        if (y > 280) {
+                            doc.addPage();
+                            y = 20;
+                        }
+                    });
+
+                    y += 5;
+                });
+
+                doc.save("deudas_lsc.pdf");
+            };
+        }
         
         const firebaseConfig = {
           apiKey: "AIzaSyBdYvEPLmHKJGadBsN1MGNsoSn-Py9UJw8",
@@ -414,7 +419,7 @@ async function exportarDeudasPDF() {
         let activeRuleta = null; 
         let currentResult = null;
         let activeRuletaOptions = [];
-        let isDuplicating = false; // Flag para el multiplicador
+        let isDuplicating = false; 
         let isEditMode = false;
         let currentMode = 'multa';
 
@@ -486,7 +491,12 @@ async function exportarDeudasPDF() {
                 <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-400 relative">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-2">
-                            <h3 class="font-bold text-lg text-gray-800">${p.nombre}</h3>
+                            <h3 class="font-bold text-lg text-gray-800">${getNombreCompleto(p)}</h3>
+                            ${p.telefono ? `
+                            <a href="https://wa.me/${p.telefono}?text=${getMensajeDeuda(p)}" target="_blank" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            ` : ''}
                             <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
                             <button onclick="deletePlayer('${p.nombre}')" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
@@ -514,7 +524,7 @@ async function exportarDeudasPDF() {
                 <div class="p-4 group">
                     <div class="flex items-center gap-3 mb-2">
                         <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold text-sm">${p.nombre.charAt(0)}</div>
-                        <span class="font-bold text-gray-800 text-lg">${p.nombre}</span>
+                        <span class="font-bold text-gray-800 text-lg">${getNombreCompleto(p)}</span>
                         <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
                     </div>
                     <div class="pl-11 space-y-2">
@@ -537,7 +547,7 @@ async function exportarDeudasPDF() {
                 <div class="p-4 flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <div class="bg-green-100 p-2 rounded-full text-green-600"><i class="fas fa-check text-xs"></i></div>
-                        <div><span class="font-semibold text-gray-700 block">${p.nombre}</span><span class="text-[10px] text-gray-400 uppercase">${p.categoria}</span></div>
+                        <div><span class="font-semibold text-gray-700 block">${getNombreCompleto(p)}</span><span class="text-[10px] text-gray-400 uppercase">${p.categoria}</span></div>
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-mono font-bold text-green-700 bg-green-50 px-2 py-1 rounded border text-sm">${p.monto}</span>
@@ -572,7 +582,6 @@ async function exportarDeudasPDF() {
             }
         }
 
-        // --- RULETA LOGIC ---
         function getOpcionesPorCategoria(cat) {
             let ops = [...ruletaBase]; 
             if (cat === '3ra') ops = ops.map(o => o === "$10.000" ? "$5.000" : (o === "10L de Agua" ? "5L de Agua" : o));
@@ -584,7 +593,7 @@ async function exportarDeudasPDF() {
             if (isEditMode) return;
             activeRuleta = { nombre, motivo };
             currentResult = null;
-            isDuplicating = false; // Reset multiplicador
+            isDuplicating = false; 
             const p = state.pendientes.find(x => x.nombre === nombre);
             activeRuletaOptions = getOpcionesPorCategoria(p.categoria || '1ra');
             document.getElementById('ruleta-player').innerText = nombre;
@@ -616,7 +625,7 @@ async function exportarDeudasPDF() {
                     if (opt === "Duplica (tira de nuevo)") {
                         isDuplicating = true;
                         display.className = "text-3xl font-black text-orange-500 uppercase leading-tight transform scale-110 transition-all";
-                        activeRuletaOptions = activeRuletaOptions.filter(o => o !== "Duplica (tira de nuevo)"); // Bloquear nueva duplicación
+                        activeRuletaOptions = activeRuletaOptions.filter(o => o !== "Duplica (tira de nuevo)"); 
                         btn.innerText = "TIRAR DE NUEVO (X2)";
                         btn.className = "py-3 px-4 rounded-lg bg-orange-500 text-white font-bold text-lg shadow-lg active:scale-95";
                         btn.classList.remove('hidden');
@@ -645,6 +654,7 @@ async function exportarDeudasPDF() {
         }
 
         function toggleAdmin() { document.getElementById('admin-modal').classList.toggle('hidden'); }
+        
         function setMode(m) {
             currentMode = m;
             ['multa', 'ruleta', 'pago'].forEach(x => document.getElementById('mode-'+x).className = "p-3 rounded-lg border font-bold text-xs shadow-sm");
@@ -657,23 +667,67 @@ async function exportarDeudasPDF() {
         }
 
         function guardarEntradaManual() {
-            const rawN = document.getElementById('input-jugador').value.trim(), c = document.getElementById('input-concepto').value.trim(), cat = document.getElementById('input-categoria').value;
-            if(!rawN || !c) return;
-            const n = rawN.charAt(0).toUpperCase() + rawN.slice(1);
+            const nombre = document.getElementById('input-nombre').value.trim();
+            const apellido = document.getElementById('input-apellido').value.trim();
+            const telefono = document.getElementById('input-telefono').value.trim();
+
+            const rawN = document.getElementById('input-jugador').value.trim();
+            const c = document.getElementById('input-concepto').value.trim();
+            const cat = document.getElementById('input-categoria').value;
+
+            if ((!nombre && !rawN) || !c) return;
+
+            const finalNombre = nombre || rawN;
+
+            let jugador = state.deudas.find(x => 
+                x.nombre === finalNombre && x.apellido === apellido
+            );
+
             if(currentMode==='multa') {
-                const d = state.deudas.find(x=>x.nombre===n);
-                if(d) d.items.push(c); else state.deudas.push({ nombre: n, categoria: cat, items: [c] });
+                if(jugador) {
+                    jugador.items.push(c);
+                } else {
+                    state.deudas.push({ 
+                        nombre: finalNombre,
+                        apellido,
+                        telefono,
+                        categoria: cat,
+                        items: [c] 
+                    });
+                }
                 showTab('deudas');
-            } else if(currentMode==='ruleta') {
-                const p = state.pendientes.find(x=>x.nombre===n);
-                if(p) p.motivos.push(c); else state.pendientes.push({ nombre: n, categoria: cat, motivos: [c] });
+            } 
+            else if(currentMode==='ruleta') {
+                let p = state.pendientes.find(x=>x.nombre===finalNombre);
+                if(p) {
+                    p.motivos.push(c);
+                } else {
+                    state.pendientes.push({ 
+                        nombre: finalNombre,
+                        apellido,
+                        telefono,
+                        categoria: cat,
+                        motivos: [c] 
+                    });
+                }
                 showTab('pendientes');
-            } else {
+            } 
+            else {
                 if(!state.cobrados) state.cobrados = [];
-                state.cobrados.push({ nombre: n, categoria: cat, monto: c, raw: parseMoney(c) });
+                state.cobrados.push({ 
+                    nombre: finalNombre,
+                    apellido,
+                    telefono,
+                    categoria: cat,
+                    monto: c,
+                    raw: parseMoney(c) 
+                });
                 showTab('cobrados');
             }
-            saveState(); toggleAdmin(); refreshAll();
+
+            saveState();
+            toggleAdmin();
+            refreshAll();
         }
     </script>
 </body>
