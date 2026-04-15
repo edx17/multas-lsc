@@ -251,6 +251,55 @@
     </div>
 
     <script>
+        const PLANTEL_MAESTRO = [
+            { nombre: "Joaquin", apellido: "Alberto", telefono: "5491132164060", categoria: "1ra" },
+            { nombre: "Marcos", apellido: "Benitez", telefono: "5491136078776", categoria: "1ra" },
+            { nombre: "Jonathan", apellido: "Benquet", telefono: "5491140819554", categoria: "1ra" },
+            { nombre: "Agustin", apellido: "Cabrera", telefono: "5491156597144", categoria: "1ra" },
+            { nombre: "Maximiliano", apellido: "Del Palacio", telefono: "5491161653685", categoria: "1ra" },
+            { nombre: "Walter", apellido: "Fiocchi", telefono: "5491128714896", categoria: "1ra" },
+            { nombre: "Agustin", apellido: "Gardiol", telefono: "5491140707889", categoria: "1ra" },
+            { nombre: "Nicolas", apellido: "Gonzi", telefono: "5491122986215", categoria: "1ra" },
+            { nombre: "Lautaro", apellido: "Gregorio", telefono: "5491127395849", categoria: "1ra" },
+            { nombre: "Yonathan", apellido: "Gutierrez", telefono: "5491155801302", categoria: "1ra" },
+            { nombre: "Facundo", apellido: "Ledesma", telefono: "5491154851592", categoria: "1ra" },
+            { nombre: "Gonzalo", apellido: "Quiroga", telefono: "5491123732627", categoria: "1ra" },
+            { nombre: "Agustin", apellido: "Reche", telefono: "5491124042959", categoria: "1ra" },
+            { nombre: "Brian", apellido: "Rumak", telefono: "5491164303159", categoria: "1ra" },
+            { nombre: "Thiago", apellido: "Silva", telefono: "5491168197757", categoria: "1ra" },
+            { nombre: "Ignacio", apellido: "Smokvina", telefono: "5491170843103", categoria: "1ra" },
+            { nombre: "Gian Luca", apellido: "Aguinaco", telefono: "5491144366833", categoria: "3ra" },
+            { nombre: "Ramiro", apellido: "Albornoz", telefono: "5491151801630", categoria: "3ra" },
+            { nombre: "Agustin", apellido: "Almiron", telefono: "5491125366989", categoria: "3ra" },
+            { nombre: "Jeremías", apellido: "Ayunta", telefono: "5491127010681", categoria: "3ra" },
+            { nombre: "Federico", apellido: "Bursa", telefono: "5491123407595", categoria: "3ra" },
+            { nombre: "Tiziano", apellido: "Diaz", telefono: "5491141622653", categoria: "3ra" },
+            { nombre: "Facundo", apellido: "Faya", telefono: "5491167182751", categoria: "3ra" },
+            { nombre: "Ezequiel", apellido: "Ferreyra", telefono: "5491135016335", categoria: "3ra" },
+            { nombre: "Frank", apellido: "Figueroa", telefono: "5491165087479", categoria: "3ra" },
+            { nombre: "Ramiro", apellido: "Mack", telefono: "5491170144031", categoria: "3ra" },
+            { nombre: "Benjamin", apellido: "Matoff", telefono: "5491122579043", categoria: "3ra" },
+            { nombre: "Bautista", apellido: "Milocco", telefono: "5491170311380", categoria: "3ra" },
+            { nombre: "Mirko", apellido: "Perez", telefono: "5491131461480", categoria: "3ra" },
+            { nombre: "Thiago", apellido: "Perviu", telefono: "5491133291907", categoria: "3ra" },
+            { nombre: "Fabrizio", apellido: "Ramirez", telefono: "5491131323015", categoria: "3ra" },
+            { nombre: "Matias", apellido: "Reyes", telefono: "5491157078051", categoria: "3ra" },
+            { nombre: "Tomás", apellido: "Rodriguez", telefono: "5491130175610", categoria: "3ra" },
+            { nombre: "Ignacio", apellido: "Sanchez", telefono: "5491153402732", categoria: "3ra" },
+            { nombre: "Bautista", apellido: "Stanizzi", telefono: "5491127209288", categoria: "3ra" },
+            { nombre: "Camilo", apellido: "Tomasetig", telefono: "5491161360756", categoria: "3ra" },
+            { nombre: "Benito", apellido: "Wiemeyer", telefono: "5491130788495", categoria: "3ra" },
+            { nombre: "Benjamín", apellido: "Zeballos", telefono: "5491140979433", categoria: "3ra" },
+            { nombre: "Patricio", apellido: "Cora", telefono: "", categoria: "CT" },
+            { nombre: "Daniel", apellido: "Delledonne", telefono: "", categoria: "CT" },
+            { nombre: "Ali", apellido: "Kassay", telefono: "", categoria: "CT" },
+            { nombre: "Nicolás", apellido: "Navarro", telefono: "", categoria: "CT" },
+            { nombre: "Ignacio", apellido: "Navarro", telefono: "", categoria: "CT" },
+            { nombre: "Juan", apellido: "Paredes", telefono: "", categoria: "CT" },
+            { nombre: "Eduardo", apellido: "Theunynck", telefono: "", categoria: "CT" },
+            { nombre: "Matías", apellido: "Torres", telefono: "", categoria: "CT" }
+        ];
+
         function getNombreCompleto(p) {
             if (p.apellido && p.nombre) return `${p.apellido} ${p.nombre}`;
             return p.nombre || '';
@@ -258,13 +307,11 @@
 
         function getMensajeDeuda(p) {
             let total = 0;
-
             const detalle = (p.items || []).map(i => {
                 const val = parseMoney(i);
                 total += val;
                 return `- ${i}`;
             }).join('%0A');
-
             return `Hola ${p.nombre || ''}, tenés las siguientes multas:%0A${detalle}%0A%0ATotal: $${total}`;
         }
 
@@ -276,7 +323,6 @@
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
             const img = new Image();
             img.src = "EscudoLiber.png";
 
@@ -288,13 +334,7 @@
                         total += val;
                         return { concepto: i, monto: val };
                     });
-
-                    return {
-                        nombre: p.nombre,
-                        categoria: p.categoria || '1ra',
-                        total,
-                        items
-                    };
+                    return { nombre: p.nombre, categoria: p.categoria || '1ra', total, items };
                 });
 
                 data.sort((a, b) => b.total - a.total);
@@ -302,39 +342,28 @@
                 doc.addImage(img, "PNG", 10, 10, 20, 20);
                 doc.setFontSize(16);
                 doc.text("Multas - Libertadores SC", 35, 18);
-
                 doc.setFontSize(10);
                 doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 35, 24);
 
                 let y = 40;
-
                 data.forEach(p => {
                     doc.setFontSize(12);
                     doc.setFont(undefined, "bold");
                     doc.text(`${getNombreCompleto(p)} (${p.categoria})`, 10, y);
-
                     doc.setFont(undefined, "normal");
                     doc.text(`Total: $${p.total.toLocaleString('es-AR')}`, 140, y);
-
                     y += 6;
 
                     p.items.sort((a, b) => b.monto - a.monto);
-
                     p.items.forEach(item => {
                         doc.setFontSize(10);
                         doc.text(`- ${item.concepto}`, 12, y);
                         doc.text(`$${item.monto.toLocaleString('es-AR')}`, 160, y, { align: "right" });
                         y += 5;
-
-                        if (y > 280) {
-                            doc.addPage();
-                            y = 20;
-                        }
+                        if (y > 280) { doc.addPage(); y = 20; }
                     });
-
                     y += 5;
                 });
-
                 doc.save("deudas_lsc.pdf");
             };
         }
@@ -383,6 +412,22 @@
         window.onload = function() {
             refreshAll(); 
             initFirebase();
+
+            document.getElementById('input-jugador').addEventListener('input', (e) => {
+                const searchVal = e.target.value.toLowerCase().trim();
+                const match = PLANTEL_MAESTRO.find(p => 
+                    `${p.nombre} ${p.apellido}`.toLowerCase() === searchVal ||
+                    p.nombre.toLowerCase() === searchVal ||
+                    p.apellido.toLowerCase() === searchVal
+                );
+
+                if (match) {
+                    document.getElementById('input-nombre').value = match.nombre;
+                    document.getElementById('input-apellido').value = match.apellido;
+                    document.getElementById('input-telefono').value = match.telefono || '';
+                    document.getElementById('input-categoria').value = match.categoria;
+                }
+            });
         };
 
         function initFirebase() {
@@ -463,8 +508,11 @@
             renderDeudas();
             renderPendientes();
             renderCobrados();
-            const allPlayers = new Set([...(state.deudas||[]).map(d=>d.nombre), ...(state.cobrados||[]).map(c=>c.nombre), ...(state.pendientes||[]).map(p=>p.nombre)]);
-            document.getElementById('players-list').innerHTML = Array.from(allPlayers).sort().map(name => `<option value="${name}">`).join('');
+            
+            document.getElementById('players-list').innerHTML = PLANTEL_MAESTRO
+                .sort((a,b) => a.apellido.localeCompare(b.apellido))
+                .map(p => `<option value="${p.nombre} ${p.apellido}">`)
+                .join('');
         }
 
         function toggleEditMode() {
