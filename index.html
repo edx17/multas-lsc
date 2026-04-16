@@ -334,7 +334,7 @@
                         total += val;
                         return { concepto: i, monto: val };
                     });
-                    return { nombre: p.nombre, categoria: p.categoria || '1ra', total, items };
+                    return { nombre: p.nombre, apellido: p.apellido, categoria: p.categoria || '1ra', total, items };
                 });
 
                 data.sort((a, b) => b.total - a.total);
@@ -488,9 +488,9 @@
             }
         }
 
-        function getPlayerCategory(nombre) {
+        function getPlayerCategory(nombre, apellido) {
             const allLists = [...(state.deudas||[]), ...(state.pendientes||[]), ...(state.cobrados||[])];
-            const player = allLists.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+            const player = allLists.find(p => p.nombre.toLowerCase() === nombre.toLowerCase() && (p.apellido || '').toLowerCase() === (apellido || '').toLowerCase());
             return player ? (player.categoria || '1ra') : '1ra';
         }
 
@@ -545,19 +545,19 @@
                                 <i class="fab fa-whatsapp"></i>
                             </a>
                             ` : ''}
-                            <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
-                            <button onclick="deletePlayer('${p.nombre}')" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full"><i class="fas fa-trash-alt text-xs"></i></button>
+                            <span onclick="cycleCategory('${p.nombre}', '${p.apellido || ''}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
+                            <button onclick="deletePlayer('${p.nombre}', '${p.apellido || ''}')" class="edit-control ml-2 text-red-500 bg-red-100 p-1.5 rounded-full"><i class="fas fa-trash-alt text-xs"></i></button>
                         </div>
                         ${money > 0 ? `<span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">$${money.toLocaleString()}</span>` : ''}
                     </div>
                     <ul class="text-sm space-y-2">
                         ${p.items.map((item, iIndex) => `
                             <li class="flex items-center justify-between gap-2 p-2 rounded bg-gray-50 border border-gray-100">
-                                <div class="flex items-center gap-2 flex-grow" onclick="if(!isEditMode) confirmarCobro('${p.nombre}', ${iIndex})">
+                                <div class="flex items-center gap-2 flex-grow" onclick="if(!isEditMode) confirmarCobro('${p.nombre}', '${p.apellido || ''}', ${iIndex})">
                                     <i class="fas ${parseMoney(item)>0 ? 'fa-money-bill-wave text-green-600' : 'fa-bolt text-yellow-500'} text-xs w-4"></i>
                                     <span class="${parseMoney(item)>0 ? 'font-semibold text-gray-800' : 'text-gray-700'}">${item}</span>
                                 </div>
-                                <button onclick="deleteDeudaItem('${p.nombre}', ${iIndex})" class="edit-control text-red-500 px-2"><i class="fas fa-times"></i></button>
+                                <button onclick="deleteDeudaItem('${p.nombre}', '${p.apellido || ''}', ${iIndex})" class="edit-control text-red-500 px-2"><i class="fas fa-times"></i></button>
                                 <i class="fas fa-arrow-right text-gray-300 text-xs hide-on-edit"></i>
                             </li>`).join('')}
                     </ul>
@@ -573,15 +573,15 @@
                     <div class="flex items-center gap-3 mb-2">
                         <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center font-bold text-sm">${p.nombre.charAt(0)}</div>
                         <span class="font-bold text-gray-800 text-lg">${getNombreCompleto(p)}</span>
-                        <span onclick="cycleCategory('${p.nombre}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
+                        <span onclick="cycleCategory('${p.nombre}', '${p.apellido || ''}')" class="text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${getCategoryBadgeClass(p.categoria)} badge-editable">${p.categoria || '1ra'}</span>
                     </div>
                     <div class="pl-11 space-y-2">
                         ${p.motivos.map((m, mIdx) => `
                             <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
                                 <span class="text-xs sm:text-sm text-gray-600 font-medium">${m}</span>
                                 <div class="flex items-center gap-2">
-                                    <button onclick="abrirRuleta('${p.nombre}', '${m}')" class="hide-on-edit bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold"><i class="fas fa-dice"></i> Tirar</button>
-                                    <button onclick="deletePendiente('${p.nombre}', ${mIdx})" class="edit-control text-red-500 p-1"><i class="fas fa-trash-alt"></i></button>
+                                    <button onclick="abrirRuleta('${p.nombre}', '${p.apellido || ''}', '${m}')" class="hide-on-edit bg-club-yellow text-club-green px-3 py-1 rounded text-xs font-bold"><i class="fas fa-dice"></i> Tirar</button>
+                                    <button onclick="deletePendiente('${p.nombre}', '${p.apellido || ''}', ${mIdx})" class="edit-control text-red-500 p-1"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </div>`).join('')}
                     </div>
@@ -604,28 +604,28 @@
                 </div>`).reverse().join('')}</div>`;
         }
 
-        function deleteDeudaItem(n, i) { if(!confirm("Borrar?")) return; const p = state.deudas.find(d=>d.nombre===n); p.items.splice(i,1); saveState(); refreshAll(); }
-        function deletePlayer(n) { if(!confirm("Borrar?")) return; state.deudas = state.deudas.filter(d=>d.nombre!==n); saveState(); refreshAll(); }
-        function deletePendiente(n, i) { if(!confirm("Borrar?")) return; const p = state.pendientes.find(d=>d.nombre===n); p.motivos.splice(i,1); if(p.motivos.length===0) state.pendientes = state.pendientes.filter(x=>x.nombre!==n); saveState(); refreshAll(); }
+        function deleteDeudaItem(n, a, i) { if(!confirm("Borrar?")) return; const p = state.deudas.find(d=>d.nombre===n && (d.apellido||'')===a); p.items.splice(i,1); saveState(); refreshAll(); }
+        function deletePlayer(n, a) { if(!confirm("Borrar?")) return; state.deudas = state.deudas.filter(d=>!(d.nombre===n && (d.apellido||'')===a)); saveState(); refreshAll(); }
+        function deletePendiente(n, a, i) { if(!confirm("Borrar?")) return; const p = state.pendientes.find(d=>d.nombre===n && (d.apellido||'')===a); p.motivos.splice(i,1); if(p.motivos.length===0) state.pendientes = state.pendientes.filter(x=>!(x.nombre===n && (x.apellido||'')===a)); saveState(); refreshAll(); }
         function deleteCobrado(i) { if(!confirm("Borrar?")) return; state.cobrados.splice(i,1); saveState(); refreshAll(); }
 
-        function cycleCategory(n) {
+        function cycleCategory(n, a) {
             if (!isEditMode) return;
             const next = { '1ra': '3ra', '3ra': 'CT', 'CT': '1ra' };
-            const cur = getPlayerCategory(n);
-            [state.deudas, state.pendientes, state.cobrados].forEach(list => { if(list) list.forEach(p => { if(p.nombre===n) p.categoria = next[cur]; })});
+            const cur = getPlayerCategory(n, a);
+            [state.deudas, state.pendientes, state.cobrados].forEach(list => { if(list) list.forEach(p => { if(p.nombre===n && (p.apellido||'')===a) p.categoria = next[cur]; })});
             saveState(); refreshAll();
         }
 
-        function confirmarCobro(n, i) {
+        function confirmarCobro(n, a, i) {
             if (isEditMode) return;
-            const p = state.deudas.find(d=>d.nombre===n);
+            const p = state.deudas.find(d=>d.nombre===n && (d.apellido||'')===a);
             const item = p.items[i];
             if(confirm(`Confirmar pago de ${n} por "${item}"?`)) {
                 p.items.splice(i, 1);
-                if(p.items.length===0) state.deudas = state.deudas.filter(x=>x.nombre!==n);
+                if(p.items.length===0) state.deudas = state.deudas.filter(x=>!(x.nombre===n && (x.apellido||'')===a));
                 if(!state.cobrados) state.cobrados = [];
-                state.cobrados.push({ nombre: n, categoria: p.categoria, monto: item, raw: parseMoney(item) });
+                state.cobrados.push({ nombre: n, apellido: a, categoria: p.categoria, monto: item, raw: parseMoney(item) });
                 saveState(); refreshAll();
             }
         }
@@ -637,14 +637,14 @@
             return ops;
         }
 
-        function abrirRuleta(nombre, motivo) {
+        function abrirRuleta(nombre, apellido, motivo) {
             if (isEditMode) return;
-            activeRuleta = { nombre, motivo };
+            activeRuleta = { nombre, apellido, motivo };
             currentResult = null;
             isDuplicating = false; 
-            const p = state.pendientes.find(x => x.nombre === nombre);
+            const p = state.pendientes.find(x => x.nombre === nombre && (x.apellido||'') === apellido);
             activeRuletaOptions = getOpcionesPorCategoria(p.categoria || '1ra');
-            document.getElementById('ruleta-player').innerText = nombre;
+            document.getElementById('ruleta-player').innerText = getNombreCompleto(p);
             document.getElementById('ruleta-motivo').innerText = motivo;
             const badge = document.getElementById('ruleta-cat-badge');
             badge.innerText = p.categoria || '1ra';
@@ -692,12 +692,12 @@
 
         function confirmarRuleta() {
             if(!currentResult) return;
-            const { nombre, motivo } = activeRuleta;
-            const p = state.pendientes.find(x => x.nombre === nombre);
+            const { nombre, apellido, motivo } = activeRuleta;
+            const p = state.pendientes.find(x => x.nombre === nombre && (x.apellido||'') === apellido);
             p.motivos = p.motivos.filter(m => m !== motivo);
-            if(p.motivos.length === 0) state.pendientes = state.pendientes.filter(x => x.nombre !== nombre);
-            const d = state.deudas.find(x => x.nombre === nombre);
-            if(d) d.items.push(currentResult); else state.deudas.push({ nombre, categoria: p.categoria, items: [currentResult] });
+            if(p.motivos.length === 0) state.pendientes = state.pendientes.filter(x => !(x.nombre === nombre && (x.apellido||'') === apellido));
+            const d = state.deudas.find(x => x.nombre === nombre && (x.apellido||'') === apellido);
+            if(d) d.items.push(currentResult); else state.deudas.push({ nombre, apellido, categoria: p.categoria, items: [currentResult] });
             saveState(); closeRuletaModal(); refreshAll(); showTab('deudas');
         }
 
@@ -728,7 +728,7 @@
             const finalNombre = nombre || rawN;
 
             let jugador = state.deudas.find(x => 
-                x.nombre === finalNombre && x.apellido === apellido
+                x.nombre === finalNombre && (x.apellido || '') === (apellido || '')
             );
 
             if(currentMode==='multa') {
@@ -746,7 +746,7 @@
                 showTab('deudas');
             } 
             else if(currentMode==='ruleta') {
-                let p = state.pendientes.find(x=>x.nombre===finalNombre);
+                let p = state.pendientes.find(x=>x.nombre===finalNombre && (x.apellido || '') === (apellido || ''));
                 if(p) {
                     p.motivos.push(c);
                 } else {
@@ -772,6 +772,9 @@
                 });
                 showTab('cobrados');
             }
+
+            // Limpieza de campos post-carga
+            document.querySelectorAll('#input-jugador, #input-nombre, #input-apellido, #input-telefono, #input-concepto').forEach(el => el.value = '');
 
             saveState();
             toggleAdmin();
