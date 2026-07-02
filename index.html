@@ -252,6 +252,7 @@
 
     <script>
         const PLANTEL_MAESTRO = [
+            { nombre: "Richard", apellido: "Garayalde", telefono: "5491167955215", categoria: "1ra" },
             { nombre: "Joaquin", apellido: "Alberto", telefono: "5491132164060", categoria: "1ra" },
             { nombre: "Marcos", apellido: "Benitez", telefono: "5491136078776", categoria: "1ra" },
             { nombre: "Jonathan", apellido: "Benquet", telefono: "5491140819554", categoria: "1ra" },
@@ -369,6 +370,27 @@
             };
         }
         
+        function exportarDeudas() {
+            if (!state.deudas || state.deudas.length === 0) {
+                alert("No hay deudas para exportar a CSV.");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,Nombre,Apellido,Categoria,Concepto,Monto\n";
+            state.deudas.forEach(p => {
+                p.items.forEach(item => {
+                    const monto = parseMoney(item);
+                    csvContent += `${p.nombre},${p.apellido || ''},${p.categoria || '1ra'},"${item}",$${monto}\n`;
+                });
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "deudas_lsc.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         const firebaseConfig = {
           apiKey: "AIzaSyBdYvEPLmHKJGadBsN1MGNsoSn-Py9UJw8",
           authDomain: "multas-lsc.firebaseapp.com",
